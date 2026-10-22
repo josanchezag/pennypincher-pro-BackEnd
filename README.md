@@ -180,6 +180,13 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/dev-login | jq -r .dat
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/users/me
 ```
 
+### Perfil del usuario
+
+- `GET /api/v1/users/me` → `{ id, email, name, pictureUrl, createdAt }` del usuario del token.
+- `PATCH /api/v1/users/me` con `{ "name": "..." }`: el nombre se recorta y debe tener entre 1 y 100
+  caracteres (si no, `400 VALIDATION_FAILED`). `email` y `pictureUrl` los gestiona Google y se ignoran.
+- El `userId` siempre sale del access token, nunca del cuerpo. Si el usuario ya no existe: `404 NOT_FOUND`.
+
 ### Configurar el cliente OAuth de Google
 
 1. En [Google Cloud Console](https://console.cloud.google.com/apis/credentials) crear un
