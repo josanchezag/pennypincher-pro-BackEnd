@@ -205,6 +205,17 @@ con hasta 16 dígitos enteros y 2 decimales, y el nombre se recorta y debe tener
   categoría desconocida (también en `?category=`) o un id que no es UUID responden `400 VALIDATION_FAILED`
   con el campo en `error.details`.
 
+### Patrimonio: pasivos
+
+`/api/v1/liabilities` funciona igual que `/api/v1/assets` (misma implementación, `AbstractCrudController` y
+`AbstractCrudUseCase`), pero el monto se llama `currentBalance` (saldo pendiente, `>= 0`):
+
+- `GET /api/v1/liabilities[?category=CREDIT_CARD]` → `{ id, name, currentBalance, category, createdAt, updatedAt }`.
+  Categorías: `CREDIT_CARD`, `PERSONAL_LOAN`, `BANK_LOAN`, `FAMILY_DEBT`, `OTHER`.
+- `GET /api/v1/liabilities/total` → `{ totalLiabilities }`; `GET /api/v1/liabilities/{id}` → el pasivo.
+- `POST /api/v1/liabilities` y `PUT /api/v1/liabilities/{id}` con `{ name, currentBalance, category }`;
+  `DELETE /api/v1/liabilities/{id}` → `204` (borrado lógico).
+
 ### CORS
 
 Registrado solo para `/api/**`, igual que en la sección 10 de la especificación: orígenes explícitos de

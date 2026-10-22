@@ -94,6 +94,9 @@ class BalanceSheetItemGuardIntegrationTest : ApiIntegrationTest() {
         private const val NAME_TOO_LONG = 151
 
         @JvmStatic
-        fun endpoints(): List<Endpoint> = listOf(Endpoint("/api/v1/assets", "value", "CASH"))
+        fun endpoints(): List<Endpoint> = listOf(
+            Endpoint("/api/v1/assets", "value", "CASH"),
+            Endpoint("/api/v1/liabilities", "currentBalance", "CREDIT_CARD"),
+        )
     }
 }
