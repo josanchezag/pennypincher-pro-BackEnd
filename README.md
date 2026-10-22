@@ -216,6 +216,22 @@ con hasta 16 dígitos enteros y 2 decimales, y el nombre se recorta y debe tener
 - `POST /api/v1/liabilities` y `PUT /api/v1/liabilities/{id}` con `{ name, currentBalance, category }`;
   `DELETE /api/v1/liabilities/{id}` → `204` (borrado lógico).
 
+### Patrimonio neto
+
+- `GET /api/v1/net-worth/current` → `{ totalAssets, totalLiabilities, netWorth }` calculado en vivo con los
+  activos y pasivos activos (no guarda nada). `netWorth` puede ser negativo.
+- `POST /api/v1/net-worth/snapshots` con `{ "snapshotDate": "2026-10-21" }` guarda los totales actuales
+  para el **mes** de esa fecha: `snapshotDate` se normaliza al primer día del mes. Si el mes no tenía
+  snapshot responde `201`; si ya existía lo recalcula (mismo `id`, conserva `createdAt`) y responde `200`.
+  Es un único `INSERT ... ON CONFLICT DO UPDATE`, así que varias peticiones simultáneas para el mismo mes
+  dejan una sola fila y todas responden `201`/`200`. Un mes posterior al actual (UTC) responde
+  `400 VALIDATION_FAILED` en `snapshotDate`, y unos totales que no caben en `NUMERIC(18,2)` responden
+  `400` en `totalAssets`/`totalLiabilities`.
+- `GET /api/v1/net-worth/snapshots[?from=2024-01-01&to=2026-12-31]` → lista de
+  `{ id, snapshotDate, totalAssets, totalLiabilities, netWorth, createdAt, updatedAt }` ordenada por
+  `snapshotDate` ascendente. Los límites son inclusivos y opcionales; `from` se lleva al primer día de su
+  mes. `from` posterior a `to`, o una fecha que no es ISO (`yyyy-MM-dd`), responde `400 VALIDATION_FAILED`.
+
 ### CORS
 
 Registrado solo para `/api/**`, igual que en la sección 10 de la especificación: orígenes explícitos de

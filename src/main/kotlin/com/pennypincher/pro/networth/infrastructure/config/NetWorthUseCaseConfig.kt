@@ -2,10 +2,13 @@ package com.pennypincher.pro.networth.infrastructure.config
 
 import com.pennypincher.pro.networth.application.usecase.AssetUseCaseImpl
 import com.pennypincher.pro.networth.application.usecase.LiabilityUseCaseImpl
+import com.pennypincher.pro.networth.application.usecase.NetWorthUseCaseImpl
 import com.pennypincher.pro.networth.domain.port.inbound.AssetUseCase
 import com.pennypincher.pro.networth.domain.port.inbound.LiabilityUseCase
+import com.pennypincher.pro.networth.domain.port.inbound.NetWorthUseCase
 import com.pennypincher.pro.networth.domain.port.outbound.AssetRepository
 import com.pennypincher.pro.networth.domain.port.outbound.LiabilityRepository
+import com.pennypincher.pro.networth.domain.port.outbound.NetWorthSnapshotRepository
 import java.time.Clock
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -20,4 +23,12 @@ class NetWorthUseCaseConfig {
     @Bean
     fun liabilityUseCase(liabilityRepository: LiabilityRepository, clock: Clock): LiabilityUseCase =
         LiabilityUseCaseImpl(liabilityRepository, clock)
+
+    @Bean
+    fun netWorthUseCase(
+        snapshotRepository: NetWorthSnapshotRepository,
+        assetRepository: AssetRepository,
+        liabilityRepository: LiabilityRepository,
+        clock: Clock,
+    ): NetWorthUseCase = NetWorthUseCaseImpl(snapshotRepository, assetRepository, liabilityRepository, clock)
 }

@@ -9,6 +9,11 @@ import java.math.BigDecimal
 class FieldValidator {
     private val violations = mutableListOf<FieldViolation>()
 
+    /** Records [message] for [field] when [condition] is false. */
+    fun require(condition: Boolean, field: String, message: String): FieldValidator = apply {
+        if (!condition) violations += FieldViolation(field, message)
+    }
+
     /** The trimmed text must keep between 1 and [maxLength] characters. */
     fun requireText(field: String, value: String, maxLength: Int): FieldValidator = apply {
         if (value.isBlank() || value.trim().length > maxLength) {

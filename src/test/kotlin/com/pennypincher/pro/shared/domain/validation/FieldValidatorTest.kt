@@ -49,6 +49,16 @@ class FieldValidatorTest {
         assertEquals("name", exception.violations.single().field)
     }
 
+    @Test
+    fun should_record_message_only_when_condition_is_false() {
+        assertDoesNotThrow { FieldValidator().require(true, "date", "is wrong").validate() }
+
+        val exception =
+            assertThrows<ValidationException> { FieldValidator().require(false, "date", "is wrong").validate() }
+
+        assertEquals(listOf(FieldViolation("date", "is wrong")), exception.violations)
+    }
+
     private companion object {
         const val MAX = 5
     }
