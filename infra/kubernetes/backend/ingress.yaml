@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pennypincher-backend
+  namespace: pennypincher-pro
+  labels:
+    app.kubernetes.io/name: pennypincher-backend
+    app.kubernetes.io/part-of: pennypincher-pro
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.pennypincher.yourdomain.com
+      secretName: pennypincher-backend-tls
+  rules:
+    - host: api.pennypincher.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pennypincher-backend
+                port:
+                  name: http

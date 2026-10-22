@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pennypincher-backend
+  namespace: pennypincher-pro
+  labels:
+    app.kubernetes.io/name: pennypincher-backend
+    app.kubernetes.io/part-of: pennypincher-pro
+data:
+  SPRING_PROFILES_ACTIVE: prod
+  SERVER_PORT: "8080"
+  DATABASE_URL: jdbc:postgresql://pennypincher-db:5432/pennypincher
+  CORS_ALLOWED_ORIGINS: https://pennypincher.yourdomain.com
