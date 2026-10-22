@@ -16,8 +16,8 @@ class CreditCardUseCaseImpl(repository: CreditCardRepository, clock: Clock) :
     override val resourceName = "Credit card"
 
     override fun amountsOf(command: CreditCardCommand) = mapOf(
-        MONTHLY_PAYMENT_FIELD to command.monthlyPayment,
-        TOTAL_BALANCE_FIELD to command.totalBalance,
+        DebtFields.MONTHLY_PAYMENT to command.monthlyPayment,
+        DebtFields.TOTAL_BALANCE to command.totalBalance,
     )
 
     override fun build(userId: UUID, command: CreditCardCommand, now: Instant) = CreditCard(
@@ -36,9 +36,4 @@ class CreditCardUseCaseImpl(repository: CreditCardRepository, clock: Clock) :
         totalBalance = Money.of(command.totalBalance),
         updatedAt = now,
     )
-
-    private companion object {
-        const val MONTHLY_PAYMENT_FIELD = "monthlyPayment"
-        const val TOTAL_BALANCE_FIELD = "totalBalance"
-    }
 }
