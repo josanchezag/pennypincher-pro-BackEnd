@@ -1,0 +1,20 @@
+# Only the Gradle wrapper, the build files and src/ are needed to build the image
+.git
+.github
+.gradle
+.idea
+.kotlin
+.vscode
+.tools
+build
+out
+bin
+docs
+infra
+gradlew.bat
+*.md
+*.iml
+.env
+.env.*
+Dockerfile
+.dockerignore
