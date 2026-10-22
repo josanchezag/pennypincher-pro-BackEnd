@@ -16,7 +16,7 @@ class FlywayMigrationIntegrationTest : IntegrationTest() {
     private lateinit var jdbc: JdbcTemplate
 
     @Test
-    fun should_apply_all_ten_migrations_when_application_starts() {
+    fun should_apply_all_eleven_migrations_when_application_starts() {
         val versions =
             jdbc.queryForList(
                 "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank",
@@ -143,7 +143,7 @@ class FlywayMigrationIntegrationTest : IntegrationTest() {
         jdbc.queryForObject("SELECT updated_at FROM users WHERE id = ?", Any::class.java, userId)
 
     private companion object {
-        const val MIGRATION_COUNT = 10
+        const val MIGRATION_COUNT = 11
         const val FLYWAY_HISTORY_TABLE = "flyway_schema_history"
         val EXPECTED_TABLES =
             listOf(
