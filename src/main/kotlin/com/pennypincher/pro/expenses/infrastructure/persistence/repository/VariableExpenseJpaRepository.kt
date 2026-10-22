@@ -1,0 +1,6 @@
+package com.pennypincher.pro.expenses.infrastructure.persistence.repository
+
+import com.pennypincher.pro.expenses.infrastructure.persistence.entity.VariableExpenseEntity
+import com.pennypincher.pro.shared.infrastructure.persistence.repository.CategorizedAmountJpaRepository
+
+interface VariableExpenseJpaRepository : CategorizedAmountJpaRepository<VariableExpenseEntity>

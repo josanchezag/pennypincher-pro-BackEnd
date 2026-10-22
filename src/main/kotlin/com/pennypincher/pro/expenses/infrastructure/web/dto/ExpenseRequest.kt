@@ -1,6 +1,7 @@
 package com.pennypincher.pro.expenses.infrastructure.web.dto
 
 import com.pennypincher.pro.expenses.domain.model.enums.FixedExpenseCategory
+import com.pennypincher.pro.expenses.domain.model.enums.VariableExpenseCategory
 import com.pennypincher.pro.shared.infrastructure.web.dto.RequestMessages
 import jakarta.validation.constraints.NotNull
 import java.math.BigDecimal
@@ -22,3 +23,6 @@ open class ExpenseRequest<C : Enum<C>> {
 
 /** Body of `POST /fixed-expenses` and `PUT /fixed-expenses/{id}`. */
 class FixedExpenseRequest : ExpenseRequest<FixedExpenseCategory>()
+
+/** Body of `POST /variable-expenses` and `PUT /variable-expenses/{id}`. */
+class VariableExpenseRequest : ExpenseRequest<VariableExpenseCategory>()
