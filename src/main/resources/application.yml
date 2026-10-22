@@ -85,6 +85,9 @@ auth:
     secure: ${AUTH_COOKIE_SECURE:true}
     # Strict, Lax or None (None requires secure=true).
     same-site: ${AUTH_COOKIE_SAME_SITE:Strict}
+  refresh:
+    # A token rotated less than this ago is a concurrent refresh (401, session kept), not a replay.
+    reuse-grace: 30s
 
 resilience4j:
   circuitbreaker:

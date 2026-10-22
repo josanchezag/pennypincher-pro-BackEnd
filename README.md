@@ -145,6 +145,28 @@ abierto: Resilience4j, instancia `google-token`).
   export JWT_PRIVATE_KEY_PEM="$(base64 -w0 private.pem)" JWT_PUBLIC_KEY_PEM="$(base64 -w0 public.pem)"
   ```
 
+### Refresh y logout
+
+- `POST /api/v1/auth/refresh` lee la cookie `ppp_refresh`, revoca ese refresh token y emite un par nuevo
+  (misma respuesta que el callback y cookie nueva). Si la cookie falta, es desconocida, venció o fue revocada,
+  responde `401 UNAUTHORIZED` y borra la cookie.
+- Refrescos concurrentes (por ejemplo, dos pestañas a la vez): solo uno gana. Si se presenta un token rotado
+  hace menos de `auth.refresh.reuse-grace` (30 s), la respuesta es `401` con el código
+  `REFRESH_SUPERSEDED`, **sin** borrar la cookie ni cerrar la sesión ganadora: el navegador ya tiene la
+  cookie nueva, así que el cliente debe reintentar el refresh una sola vez.
+- Reutilización: presentar un token rotado después de ese margen se trata como robo y se eliminan todos los
+  refresh tokens del usuario (se cierran todas sus sesiones).
+- `DELETE /api/v1/auth/logout` elimina el refresh token de la cookie (idempotente, también sin cookie) y
+  responde `204` borrando la cookie. Un token cerrado con logout que se vuelva a presentar es simplemente
+  desconocido (`401`) y no afecta a las sesiones de otros dispositivos.
+- Protección CSRF: como estos dos endpoints se autentican solo con la cookie, exigen un header `Origin`
+  incluido en `CORS_ALLOWED_ORIGINS`; si falta o no está permitido, responden `403 FORBIDDEN_ORIGIN`.
+
+```bash
+curl -i -X POST http://localhost:8080/api/v1/auth/refresh -b cookies.txt -c cookies.txt -H 'Origin: http://localhost:3000'
+curl -i -X DELETE http://localhost:8080/api/v1/auth/logout -b cookies.txt -H 'Origin: http://localhost:3000'
+```
+
 ### Rutas protegidas
 
 Todo endpoint exige `Authorization: Bearer <accessToken>`, salvo `/api/v1/auth/**` y `/actuator/health/**`

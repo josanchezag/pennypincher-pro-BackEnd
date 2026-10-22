@@ -3,6 +3,7 @@ package com.pennypincher.pro.auth.infrastructure.config
 import com.pennypincher.pro.auth.application.usecase.AuthUseCaseImpl
 import com.pennypincher.pro.auth.application.usecase.DevLoginUseCaseImpl
 import com.pennypincher.pro.auth.application.usecase.RefreshTokenCodec
+import com.pennypincher.pro.auth.application.usecase.RefreshTokenRotator
 import com.pennypincher.pro.auth.application.usecase.TokenPairIssuer
 import com.pennypincher.pro.auth.application.usecase.UserUpserter
 import com.pennypincher.pro.auth.domain.port.inbound.AuthUseCase
@@ -37,15 +38,34 @@ class AuthUseCaseConfig {
     fun userUpserter(userRepository: UserRepository, clock: Clock): UserUpserter = UserUpserter(userRepository, clock)
 
     @Bean
+    fun refreshTokenRotator(
+        refreshTokenRepository: RefreshTokenRepository,
+        codec: RefreshTokenCodec,
+        userRepository: UserRepository,
+        tokenPairIssuer: TokenPairIssuer,
+        refreshProperties: RefreshTokenProperties,
+        clock: Clock,
+    ): RefreshTokenRotator = RefreshTokenRotator(
+        refreshTokenRepository,
+        codec,
+        userRepository,
+        tokenPairIssuer,
+        refreshProperties.reuseGrace,
+        clock,
+    )
+
+    @Bean
     fun authUseCase(
         identityProvider: IdentityProviderPort,
         userUpserter: UserUpserter,
         tokenPairIssuer: TokenPairIssuer,
+        refreshTokenRotator: RefreshTokenRotator,
         googleProperties: GoogleProperties,
     ): AuthUseCase = AuthUseCaseImpl(
         identityProvider,
         userUpserter,
         tokenPairIssuer,
+        refreshTokenRotator,
         googleProperties.allowedRedirectUris.map(String::trim).filter(String::isNotEmpty).toSet(),
     )
 

@@ -9,6 +9,7 @@ object ErrorStatusMapping {
         mapOf(
             ErrorCode.VALIDATION_FAILED to HttpStatus.BAD_REQUEST,
             ErrorCode.UNAUTHORIZED to HttpStatus.UNAUTHORIZED,
+            ErrorCode.REFRESH_SUPERSEDED to HttpStatus.UNAUTHORIZED,
             ErrorCode.GOOGLE_AUTH_FAILED to HttpStatus.UNAUTHORIZED,
             ErrorCode.FORBIDDEN to HttpStatus.FORBIDDEN,
             ErrorCode.FORBIDDEN_ORIGIN to HttpStatus.FORBIDDEN,

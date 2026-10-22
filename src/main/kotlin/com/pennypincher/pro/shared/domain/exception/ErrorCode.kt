@@ -4,6 +4,7 @@ package com.pennypincher.pro.shared.domain.exception
 enum class ErrorCode {
     VALIDATION_FAILED,
     UNAUTHORIZED,
+    REFRESH_SUPERSEDED,
     FORBIDDEN,
     FORBIDDEN_ORIGIN,
     NOT_FOUND,

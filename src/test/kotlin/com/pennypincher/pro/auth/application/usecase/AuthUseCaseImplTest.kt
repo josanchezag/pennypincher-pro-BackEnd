@@ -20,7 +20,8 @@ class AuthUseCaseImplTest {
     private val identityProvider = mockk<IdentityProviderPort>()
     private val userUpserter = mockk<UserUpserter>()
     private val tokenPairIssuer = mockk<TokenPairIssuer>()
-    private val useCase = AuthUseCaseImpl(identityProvider, userUpserter, tokenPairIssuer, setOf(REDIRECT_URI))
+    private val rotator = mockk<RefreshTokenRotator>(relaxed = true)
+    private val useCase = AuthUseCaseImpl(identityProvider, userUpserter, tokenPairIssuer, rotator, setOf(REDIRECT_URI))
     private val authorization = GoogleAuthorizationCode("code", REDIRECT_URI, "verifier")
 
     @Test
@@ -50,6 +51,17 @@ class AuthUseCaseImplTest {
 
         assertThrows<GoogleAuthenticationException> { useCase.authenticateWithGoogle(authorization) }
         verify(exactly = 0) { userUpserter.upsert(any()) }
+    }
+
+    @Test
+    fun should_delegate_to_rotator_when_refreshing_or_revoking() {
+        val expected = AuthResult(AccessToken("access", Duration.ofMinutes(15)), "next", AuthFixtures.user())
+        every { rotator.rotate("current") } returns expected
+
+        assertSame(expected, useCase.refreshToken("current"))
+        useCase.revokeRefreshToken("current")
+
+        verify { rotator.revoke("current") }
     }
 
     private companion object {
