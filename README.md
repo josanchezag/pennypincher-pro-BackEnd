@@ -1,65 +1,151 @@
 # PennyPincher Pro · Backend
 
-API REST en **Kotlin** para la gestión de finanzas personales del hogar (fortuna neta, presupuesto mensual, deudas, ahorros y metas financieras).
+API REST en **Kotlin + Spring Boot** para la gestión de finanzas personales del hogar: fortuna neta,
+presupuesto mensual, detalle de deudas y gastos, ahorros y metas de independencia financiera.
 
-> Frontend: [pennypincher-pro-frontend](https://github.com/josanchezag/pennypincher-pro-frontend)
+Este repositorio también contiene la **documentación del proyecto** (`docs/`) y la **infraestructura**
+(`infra/`: Docker Compose para desarrollo local y manifiestos de Kubernetes). No existe un repositorio
+de infraestructura aparte.
+
+> Frontend (Flutter Web): [pennypincher-pro-frontend](https://github.com/josanchezag/pennypincher-pro-frontend)
 
 ## Stack
 
-- Kotlin + Spring Boot (Gradle Kotlin DSL)
-- PostgreSQL + migraciones con Flyway
-- Seguridad: **OAuth2 Resource Server** validando ID tokens de **Google** (JWT)
-- CORS restringido a los orígenes del frontend
-- Docker para despliegue
+| Pieza | Tecnología |
+|---|---|
+| Lenguaje y framework | Kotlin 1.9.25 · Spring Boot 3.3 · JDK 21 · Gradle (Kotlin DSL, wrapper incluido) |
+| Persistencia | PostgreSQL 16 · Spring Data JPA · migraciones con **Flyway** (`src/main/resources/db/migration`) |
+| Seguridad | Spring Security 6 · CORS configurable · planificado (EPIC-002): login con **Google OAuth2** (PKCE) y tokens propios **RS256** |
+| Resiliencia | Resilience4j (dependencia incluida; circuit breaker sobre el endpoint de tokens de Google planificado en EPIC-002) |
+| Documentación de la API | springdoc-openapi (Swagger UI solo en el perfil `local`) |
+| Pruebas | JUnit 5 · MockK · Testcontainers (o una base Postgres externa vía `TEST_DB_URL`) · JaCoCo |
+| Calidad | ktlint · cobertura mínima de 80 % en los paquetes `domain` y `application` |
+| Contenedores | Dockerfile multi-stage · Docker Compose · manifiestos de Kubernetes (k3s) |
 
-## Requisitos
+## Arquitectura
 
-- JDK 21
-- Docker (para Postgres local)
+Monolito modular con arquitectura **hexagonal** (puertos y adaptadores). Cada módulo funcional
+(`auth`, `user`, `networth`, `budget`, `expenses`, `goals`, `dashboard`) y el módulo transversal
+`shared` siguen la misma estructura de capas:
 
-## Configuración
+```
+com.pennypincher.pro.<módulo>
+├── domain/          # Modelo y puertos en Kotlin puro: sin Spring, JPA ni Jakarta
+├── application/     # Casos de uso: implementan los puertos de entrada
+└── infrastructure/  # Adaptadores: web (controllers), persistencia (JPA), seguridad, configuración
+```
 
-Variables de entorno (ver `.env.example`; **nunca** subir `.env` al repo):
+El aislamiento entre usuarios es por fila: toda tabla con datos del usuario tiene `user_id`, y un
+recurso de otro usuario responde `404`. Las decisiones de arquitectura están en `docs/adr/`.
+
+## Estructura del repositorio
+
+```
+.
+├── docs/
+│   ├── DECISIONES-Y-PLAN-DE-EJECUCION.md   # Decisiones vigentes (prevalecen sobre el spec)
+│   ├── PENNYPINCHER_PRO_MASTER_PROMPT.md   # Especificación maestra
+│   ├── adr/                                # Architecture Decision Records
+│   └── epics/                              # Épicas e historias (EPIC-001 … EPIC-008)
+├── infra/
+│   ├── docker/                             # docker-compose.yml + .env.local.example
+│   └── kubernetes/                         # namespace, backend, frontend y database
+├── src/                                    # Código del backend y migraciones Flyway
+└── .github/workflows/                      # CI del backend y validación de manifiestos
+```
+
+## Inicio rápido con Docker Compose
+
+Requisitos: Docker con el plugin Compose. Levanta Postgres 16, el backend y Adminer:
+
+```bash
+cd infra/docker
+cp .env.local.example .env.local
+docker compose --env-file .env.local up -d --build
+
+curl http://localhost:8080/actuator/health   # {"status":"UP"}
+# Adminer (solo desarrollo): http://localhost:8090
+```
+
+Para apagar todo y borrar los datos: `docker compose --env-file .env.local down -v`.
+Más detalles en [`infra/docker/README.md`](infra/docker/README.md).
+
+## Ejecución local con Gradle
+
+Requisitos: JDK 21 y una base Postgres 16 accesible (por ejemplo, la del Compose):
+
+```bash
+./gradlew bootRun          # usa el perfil `local` por defecto
+```
+
+Sin variables de entorno, el perfil `local` se conecta a `jdbc:postgresql://localhost:5432/pennypincher`
+con usuario y contraseña `pennypincher`.
+
+## Perfiles
+
+| Perfil | Uso |
+|---|---|
+| `local` (por defecto) | Desarrollo. Valores por defecto para localhost y Swagger UI habilitado. Planificado (EPIC-002): `dev-login` y llaves RSA generadas al arrancar en `jwt.local-key-dir` si no se configuran. |
+| `test` | Pruebas automatizadas. La base la aporta Testcontainers o `TEST_DB_URL`. |
+| `prod` | Producción. Todos los secretos son obligatorios y llegan por variables de entorno. Swagger deshabilitado. |
+
+## Variables de entorno
+
+Nunca se suben valores reales al repositorio. Plantilla para desarrollo: `infra/docker/.env.local.example`.
 
 | Variable | Descripción |
 |---|---|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/pennypincher` |
-| `DB_USER` / `DB_PASSWORD` | Credenciales de Postgres |
-| `GOOGLE_CLIENT_ID` | Client ID de Google (audiencia esperada del token) |
-| `CORS_ALLOWED_ORIGINS` | Lista separada por comas, p. ej. `http://localhost:5000,https://pennypincher.pages.dev` |
-| `PORT` | Puerto HTTP (Render lo inyecta) |
+| `SPRING_PROFILES_ACTIVE` | `local`, `test` o `prod` |
+| `DATABASE_URL` | JDBC, p. ej. `jdbc:postgresql://<host>/<db>?sslmode=require` |
+| `DATABASE_USERNAME` / `DATABASE_PASSWORD` | Credenciales de Postgres |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Credenciales OAuth2 de Google |
+| `JWT_PRIVATE_KEY_PEM` / `JWT_PUBLIC_KEY_PEM` | Par RSA en PEM codificado en Base64 (obligatorio en `prod`) |
+| `CORS_ALLOWED_ORIGINS` | Orígenes del frontend separados por comas, p. ej. `https://pennypincher-pro.vercel.app` |
+| `PORT` / `SERVER_PORT` | Puerto HTTP (Render inyecta `PORT`; por defecto `8080`) |
 
-## Ejecución local
+## Autenticación
+
+**Estado actual (EPIC-001):** la cadena de seguridad rechaza con `401` todo lo que no sea
+`/actuator/health/**` (y la documentación de la API en el perfil `local`). CORS ya acepta solo los
+orígenes de `CORS_ALLOWED_ORIGINS`, con credenciales habilitadas para la cookie.
+
+**Planificado (EPIC-002)**, todavía no implementado:
+
+- Base de la API: `/api/v1`. Todo endpoint requerirá `Authorization: Bearer <access-token>`, salvo
+  `/api/v1/auth/**` y `/actuator/health/**`.
+- El frontend obtendrá un código de Google con PKCE y lo enviará a `POST /api/v1/auth/google/callback`.
+  El backend validará el ID token de Google, creará o actualizará el usuario y emitirá sus **propios tokens**:
+  - **Access token**: JWT firmado con **RS256**, vigencia de 15 minutos. El frontend lo guardará solo en memoria.
+  - **Refresh token**: valor opaco, guardado como hash en la base (tabla `refresh_tokens`, ya creada),
+    vigencia de 30 días, rotado en cada uso. Viajará en la cookie `ppp_refresh` (`HttpOnly; Secure; SameSite=Strict`).
+- `POST /api/v1/auth/refresh` rotará el refresh token y `DELETE /api/v1/auth/logout` lo revocará.
+- **Dev login**: con el perfil `local` existirá `POST /api/v1/auth/dev-login`, que emitirá el mismo par de
+  tokens para un usuario de prueba sin pasar por Google. En `prod` el endpoint no existirá.
+- **Llaves RSA**: en el perfil `local` se generarán al arrancar si no se configuran, en el directorio
+  `jwt.local-key-dir` (por defecto `build/keys`). En `prod` serán obligatorias por variables de entorno.
+- **Resilience4j**: circuit breaker sobre la llamada al endpoint de tokens de Google.
+
+## Pruebas y calidad
 
 ```bash
-docker run -d --name pp-db -p 5432:5432 \
-  -e POSTGRES_DB=pennypincher -e POSTGRES_USER=pp -e POSTGRES_PASSWORD=pp \
-  postgres:16
-
-./gradlew bootRun
+./gradlew ktlintCheck test build
 ```
 
-## Tests
+Las pruebas de integración usan Testcontainers (requiere Docker). Si Docker no está disponible,
+se puede apuntar a una base Postgres 16 existente:
 
 ```bash
-./gradlew test
+TEST_DB_URL=jdbc:postgresql://localhost:5432/pennypincher_test \
+TEST_DB_USERNAME=postgres TEST_DB_PASSWORD=postgres ./gradlew test
 ```
 
-## Despliegue (gratuito)
+El reporte de cobertura queda en `build/reports/jacoco/test/html/index.html`.
 
-| Pieza | Servicio |
-|---|---|
-| API | **Render** (Web Service con Docker) |
-| Base de datos | **Neon** o **Supabase** (Postgres gratuito) |
+## Despliegue
 
-> En el plan gratuito de Render el servicio se suspende por inactividad; la primera petición tras un periodo sin uso tarda unos segundos.
+Objetivo de capa gratuita: API en **Render** (Docker), base en **Neon** (Postgres serverless) y
+frontend en **Vercel**. Los manifiestos de `infra/kubernetes/` permiten un despliegue futuro en un
+clúster k3s. Por ahora no hay nada publicado; la guía está en la sección 16 de la especificación.
 
-## Seguridad
-
-- Todos los endpoints (excepto `/actuator/health`) requieren `Authorization: Bearer <google-id-token>`.
-- Los datos se aíslan por hogar: cada usuario solo accede a la información de su hogar.
-- CORS solo acepta los orígenes configurados en `CORS_ALLOWED_ORIGINS`.
-
-## Estado
-
-🚧 En construcción.
+> En el plan gratuito de Render el servicio se suspende por inactividad; la primera petición tras un
+> periodo sin uso tarda unos segundos.

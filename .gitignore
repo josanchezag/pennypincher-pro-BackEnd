@@ -6,6 +6,7 @@
 .env
 .env.*
 !.env.example
+!**/.env.local.example
 *.secrets
 application-local.yml
 application-local.yaml
@@ -77,6 +78,12 @@ bin/
 # --- Docker / datos locales de Postgres ---
 docker-data/
 pgdata/
+
+# --- Kubernetes: secretos reales generados a partir de la plantilla ---
+infra/kubernetes/**/secret.local.yaml
+
+# --- Binarios de herramientas descargados localmente ---
+.tools/
 
 # --- Sistema operativo ---
 .DS_Store
