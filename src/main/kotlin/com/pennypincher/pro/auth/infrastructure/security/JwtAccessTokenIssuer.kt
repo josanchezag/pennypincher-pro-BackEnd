@@ -2,6 +2,7 @@ package com.pennypincher.pro.auth.infrastructure.security
 
 import com.pennypincher.pro.auth.domain.model.AccessToken
 import com.pennypincher.pro.auth.domain.port.outbound.AccessTokenIssuer
+import com.pennypincher.pro.shared.infrastructure.security.jwt.AccessTokenClaims
 import com.pennypincher.pro.shared.infrastructure.security.jwt.JwtKeyConfig
 import com.pennypincher.pro.shared.infrastructure.security.jwt.JwtProperties
 import com.pennypincher.pro.user.domain.model.User
@@ -27,16 +28,12 @@ class JwtAccessTokenIssuer(
         val claims = JwtClaimsSet.builder()
             .issuer(properties.issuer)
             .subject(user.id.toString())
-            .claim(EMAIL_CLAIM, user.email)
+            .claim(AccessTokenClaims.EMAIL, user.email)
             .issuedAt(issuedAt)
             .expiresAt(issuedAt.plus(properties.accessTokenTtl))
             .build()
         val header = JwsHeader.with(SignatureAlgorithm.RS256).keyId(JwtKeyConfig.KEY_ID).build()
         val token = encoder.encode(JwtEncoderParameters.from(header, claims)).tokenValue
         return AccessToken(token, properties.accessTokenTtl)
-    }
-
-    companion object {
-        const val EMAIL_CLAIM = "email"
     }
 }

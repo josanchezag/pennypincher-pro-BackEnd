@@ -145,6 +145,19 @@ abierto: Resilience4j, instancia `google-token`).
   export JWT_PRIVATE_KEY_PEM="$(base64 -w0 private.pem)" JWT_PUBLIC_KEY_PEM="$(base64 -w0 public.pem)"
   ```
 
+### Rutas protegidas
+
+Todo endpoint exige `Authorization: Bearer <accessToken>`, salvo `/api/v1/auth/**` y `/actuator/health/**`
+(y Swagger en `local`). Sin token, o con un token vencido, mal firmado o de otro emisor, la respuesta es
+`401` con `{ "error": { "code": "UNAUTHORIZED", ... } }`. En las rutas públicas se ignora el header
+`Authorization`, así un token vencido no bloquea `/auth/refresh`. Los controladores reciben al usuario con
+`@AuthenticatedUser principal: UserPrincipal` (`userId`, `email`).
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/dev-login | jq -r .data.accessToken)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/users/me
+```
+
 ### Configurar el cliente OAuth de Google
 
 1. En [Google Cloud Console](https://console.cloud.google.com/apis/credentials) crear un

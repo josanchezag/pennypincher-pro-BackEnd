@@ -32,7 +32,11 @@ class HealthAndSecurityIntegrationTest : IntegrationTest() {
 
     @Test
     fun should_return_unauthorized_when_api_is_called_without_token() {
-        mockMvc.get("/api/v1/users/me").andExpect { status { isUnauthorized() } }
+        mockMvc.get("/api/v1/users/me").andExpect {
+            status { isUnauthorized() }
+            jsonPath("$.error.code") { value("UNAUTHORIZED") }
+            jsonPath("$.error.message") { isNotEmpty() }
+        }
     }
 
     @Test
