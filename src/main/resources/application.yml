@@ -1,0 +1,93 @@
+# Shared configuration. Values here are local-development defaults; the `prod` profile overrides
+# every sensitive value with a mandatory environment variable.
+spring:
+  application:
+    name: pennypincher-pro-backend
+  profiles:
+    default: local
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/pennypincher}
+    username: ${DATABASE_USERNAME:pennypincher}
+    password: ${DATABASE_PASSWORD:pennypincher}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    out-of-order: false
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${PORT:${SERVER_PORT:8080}}
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+      group:
+        readiness:
+          include: readinessState,db
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+
+jwt:
+  issuer: pennypincher-pro
+  access-token-ttl: 15m
+  refresh-token-ttl: 30d
+  private-key: ${JWT_PRIVATE_KEY_PEM:}
+  public-key: ${JWT_PUBLIC_KEY_PEM:}
+  # Local profile only: where the generated RSA key pair is kept when no PEM keys are configured.
+  local-key-dir: ${JWT_LOCAL_KEY_DIR:build/keys}
+
+google:
+  client-id: ${GOOGLE_CLIENT_ID:}
+  client-secret: ${GOOGLE_CLIENT_SECRET:}
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+logging:
+  level:
+    com.pennypincher.pro: DEBUG
