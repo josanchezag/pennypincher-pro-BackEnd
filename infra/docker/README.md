@@ -45,10 +45,10 @@ docker compose --env-file .env.local down -v           # apagar y borrar el volu
 
 ## Notas
 
-- El backend corre con el perfil `local`, que habilita Swagger UI. Con EPIC-002 habilitará además
-  `POST /api/v1/auth/dev-login` y generará las llaves RSA al arrancar si `JWT_PRIVATE_KEY_PEM`/`JWT_PUBLIC_KEY_PEM`
-  están vacías. Las llaves se guardarán en `/app/keys` (`JWT_LOCAL_KEY_DIR`), montado en el volumen `jwtkeys`
-  para que sobrevivan a la recreación del contenedor; `down -v` también lo borra.
+- El backend corre con el perfil `local`, que habilita Swagger UI y `POST /api/v1/auth/dev-login`, y genera
+  las llaves RSA al arrancar si `JWT_PRIVATE_KEY_PEM`/`JWT_PUBLIC_KEY_PEM` están vacías. Las llaves se guardan
+  en `/app/keys` (`JWT_LOCAL_KEY_DIR`), montado en el volumen `jwtkeys` para que sobrevivan a la recreación
+  del contenedor; `down -v` también lo borra.
 - El frontend recibe en su build `API_ORIGIN` (`FRONTEND_API_ORIGIN`, por defecto `http://localhost:8080`),
   `API_BASE_URL` (`<origen>/api/v1`), `GOOGLE_CLIENT_ID` y `DEV_LOGIN`.
 - Para probar como en producción, usar `SPRING_PROFILES_ACTIVE=prod` y definir todas las variables.

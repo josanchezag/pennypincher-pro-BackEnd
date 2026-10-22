@@ -19,7 +19,7 @@ kubernetes/
   con el origen público de la API (`https://api.pennypincher.yourdomain.com`).
 - Ingress: clase `nginx` con TLS emitido por cert-manager (`cert-manager.io/cluster-issuer: letsencrypt-prod`).
   Cambiar `pennypincher.yourdomain.com` y `api.pennypincher.yourdomain.com` por los dominios reales,
-  y `CORS_ALLOWED_ORIGINS` en `backend/configmap.yaml` por el dominio del frontend.
+  y `CORS_ALLOWED_ORIGINS` y `GOOGLE_ALLOWED_REDIRECT_URIS` en `backend/configmap.yaml` por el dominio del frontend.
 
 ## Requisitos del clúster
 

@@ -61,14 +61,45 @@ jwt:
   issuer: pennypincher-pro
   access-token-ttl: 15m
   refresh-token-ttl: 30d
+  # PEM text or Base64-encoded PEM (PKCS#8 private key, X.509 public key).
   private-key: ${JWT_PRIVATE_KEY_PEM:}
   public-key: ${JWT_PUBLIC_KEY_PEM:}
-  # Local profile only: where the generated RSA key pair is kept when no PEM keys are configured.
+  # Only the local and test profiles generate a key pair when no PEM keys are configured.
+  generate-missing-keys: false
+  # Where the generated RSA key pair is kept so tokens survive restarts.
   local-key-dir: ${JWT_LOCAL_KEY_DIR:build/keys}
 
 google:
   client-id: ${GOOGLE_CLIENT_ID:}
   client-secret: ${GOOGLE_CLIENT_SECRET:}
+  token-uri: https://oauth2.googleapis.com/token
+  jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+  # Exact redirect URIs the frontend may send with the authorization code (comma-separated).
+  allowed-redirect-uris: ${GOOGLE_ALLOWED_REDIRECT_URIS:http://localhost:3000/auth.html}
+  connect-timeout: 5s
+  read-timeout: 10s
+
+auth:
+  cookie:
+    # Browsers accept Secure cookies on http://localhost, so this stays on even locally.
+    secure: ${AUTH_COOKIE_SECURE:true}
+    # Strict, Lax or None (None requires secure=true).
+    same-site: ${AUTH_COOKIE_SAME_SITE:Strict}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      google-token:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+        # A rejected authorization code is the user's problem, not an outage of Google.
+        ignore-exceptions:
+          - com.pennypincher.pro.auth.domain.exception.GoogleAuthenticationException
 
 springdoc:
   api-docs:
@@ -81,6 +112,9 @@ spring:
   config:
     activate:
       on-profile: local
+
+jwt:
+  generate-missing-keys: true
 
 springdoc:
   api-docs:

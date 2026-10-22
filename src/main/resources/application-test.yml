@@ -7,9 +7,14 @@ spring:
 cors:
   allowed-origins: http://localhost:3000
 
+jwt:
+  generate-missing-keys: true
+  local-key-dir: build/test-keys
+
 google:
   client-id: test-client-id
   client-secret: test-client-secret
+  allowed-redirect-uris: http://localhost:3000/auth.html
 
 logging:
   level:

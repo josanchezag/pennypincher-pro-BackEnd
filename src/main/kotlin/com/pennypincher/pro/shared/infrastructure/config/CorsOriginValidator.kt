@@ -9,7 +9,6 @@ import java.net.URISyntaxException
  */
 object CorsOriginValidator {
     private val ALLOWED_SCHEMES = setOf("http", "https")
-    private const val PLACEHOLDER_MARKER = "\${"
     private const val WILDCARD = "*"
 
     fun validate(origins: List<String>): List<String> {
@@ -20,7 +19,9 @@ object CorsOriginValidator {
     }
 
     private fun requireValidOrigin(origin: String) {
-        require(PLACEHOLDER_MARKER !in origin) { "cors.allowed-origins has an unresolved placeholder: '$origin'" }
+        require(!ConfigValues.isUnresolvedPlaceholder(origin)) {
+            "cors.allowed-origins has an unresolved placeholder: '$origin'"
+        }
         require(WILDCARD !in origin) { "cors.allowed-origins cannot use '*' because credentials are allowed" }
         val uri = parse(origin)
         val isOrigin =

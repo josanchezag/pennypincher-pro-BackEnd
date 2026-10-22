@@ -19,13 +19,16 @@ management:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
-jwt:
-  private-key: ${JWT_PRIVATE_KEY_PEM}
-  public-key: ${JWT_PUBLIC_KEY_PEM}
-
 google:
   client-id: ${GOOGLE_CLIENT_ID}
   client-secret: ${GOOGLE_CLIENT_SECRET}
+  allowed-redirect-uris: ${GOOGLE_ALLOWED_REDIRECT_URIS}
+  credentials-required: true
+
+jwt:
+  private-key: ${JWT_PRIVATE_KEY_PEM}
+  public-key: ${JWT_PUBLIC_KEY_PEM}
+  generate-missing-keys: false
 
 logging:
   level:
