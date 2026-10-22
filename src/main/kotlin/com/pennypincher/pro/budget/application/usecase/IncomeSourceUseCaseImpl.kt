@@ -5,8 +5,9 @@ import com.pennypincher.pro.budget.domain.model.IncomeSourceCommand
 import com.pennypincher.pro.budget.domain.model.enums.IncomeCategory
 import com.pennypincher.pro.budget.domain.port.inbound.IncomeSourceUseCase
 import com.pennypincher.pro.budget.domain.port.outbound.IncomeSourceRepository
-import com.pennypincher.pro.shared.application.usecase.AbstractCrudUseCase
+import com.pennypincher.pro.shared.application.usecase.AbstractTotalCrudUseCase
 import com.pennypincher.pro.shared.domain.model.Money
+import com.pennypincher.pro.shared.domain.model.RecordName
 import com.pennypincher.pro.shared.domain.validation.FieldValidator
 import java.time.Clock
 import java.time.Instant
@@ -17,13 +18,13 @@ import java.util.UUID
  * currency, when given, an ISO 4217 code (it defaults to COP, also on update).
  */
 class IncomeSourceUseCaseImpl(repository: IncomeSourceRepository, clock: Clock) :
-    AbstractCrudUseCase<IncomeSource, IncomeSourceCommand, IncomeCategory>(repository, clock),
+    AbstractTotalCrudUseCase<IncomeSource, IncomeSourceCommand, IncomeCategory>(repository, clock),
     IncomeSourceUseCase {
     override val resourceName = "Income source"
     override val ordering = IncomeSource.DISPLAY_ORDER
 
     override fun validate(command: IncomeSourceCommand) = FieldValidator()
-        .requireText(NAME_FIELD, command.name, IncomeSource.MAX_NAME_LENGTH)
+        .requireText(RecordName.FIELD, command.name, IncomeSource.MAX_NAME_LENGTH)
         .requireNonNegativeAmount(AMOUNT_FIELD, command.amount)
         .require(command.currency?.matches(IncomeSource.CURRENCY_FORMAT) ?: true, CURRENCY_FIELD, CURRENCY_MESSAGE)
         .validate()
@@ -50,7 +51,6 @@ class IncomeSourceUseCaseImpl(repository: IncomeSourceRepository, clock: Clock) 
     private fun currencyOf(command: IncomeSourceCommand): String = command.currency ?: IncomeSource.DEFAULT_CURRENCY
 
     private companion object {
-        const val NAME_FIELD = "name"
         const val AMOUNT_FIELD = "amount"
         const val CURRENCY_FIELD = "currency"
         const val CURRENCY_MESSAGE = "must be a three-letter upper-case ISO 4217 code"

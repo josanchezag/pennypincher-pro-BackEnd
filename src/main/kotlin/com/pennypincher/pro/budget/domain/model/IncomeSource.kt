@@ -2,6 +2,7 @@ package com.pennypincher.pro.budget.domain.model
 
 import com.pennypincher.pro.budget.domain.model.enums.IncomeCategory
 import com.pennypincher.pro.shared.domain.model.OwnedResource
+import com.pennypincher.pro.shared.domain.model.RecordName
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
@@ -19,7 +20,7 @@ data class IncomeSource(
 ) : OwnedResource {
     companion object {
         /** Longest income source name the database accepts. */
-        const val MAX_NAME_LENGTH = 150
+        const val MAX_NAME_LENGTH = RecordName.MAX_LENGTH
 
         /** Currency used when the user does not give one. */
         const val DEFAULT_CURRENCY = "COP"

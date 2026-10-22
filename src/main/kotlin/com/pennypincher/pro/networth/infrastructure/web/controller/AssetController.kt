@@ -10,19 +10,19 @@ import com.pennypincher.pro.networth.infrastructure.web.dto.AssetTotalResponse
 import com.pennypincher.pro.networth.infrastructure.web.mapper.AssetWebMapper
 import com.pennypincher.pro.shared.infrastructure.web.ApiPaths
 import com.pennypincher.pro.shared.infrastructure.web.ResponseEnvelopeFactory
-import com.pennypincher.pro.shared.infrastructure.web.controller.AbstractCrudController
-import java.math.BigDecimal
+import com.pennypincher.pro.shared.infrastructure.web.controller.AggregateEndpoint
+import com.pennypincher.pro.shared.infrastructure.web.controller.CategorizedCrudController
+import com.pennypincher.pro.shared.infrastructure.web.controller.TotalEndpoint
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-/** `/assets`: the caller's assets. The endpoints themselves are defined by [AbstractCrudController]. */
+/** `/assets`: the caller's assets, plus `/total`. The endpoints themselves come from the shared bases. */
 @RestController
 @RequestMapping(ApiPaths.ASSETS)
 class AssetController(useCase: AssetUseCase, envelopes: ResponseEnvelopeFactory) :
-    AbstractCrudController<Asset, AssetCommand, AssetCategory, AssetRequest, AssetResponse>(useCase, envelopes) {
+    CategorizedCrudController<Asset, AssetCommand, AssetCategory, AssetRequest, AssetResponse>(useCase, envelopes),
+    TotalEndpoint<AssetTotalResponse> by AggregateEndpoint(envelopes, useCase::total, ::AssetTotalResponse) {
     override fun toCommand(request: AssetRequest) = AssetWebMapper.toCommand(request)
 
     override fun toResponse(item: Asset) = AssetWebMapper.toResponse(item)
-
-    override fun toTotalResponse(total: BigDecimal) = AssetTotalResponse(total)
 }

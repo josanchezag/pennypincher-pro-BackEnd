@@ -4,6 +4,9 @@ import com.pennypincher.pro.networth.domain.model.Liability
 import com.pennypincher.pro.networth.domain.model.LiabilityCommand
 import com.pennypincher.pro.networth.domain.model.enums.LiabilityCategory
 import com.pennypincher.pro.shared.domain.port.inbound.CrudUseCase
+import com.pennypincher.pro.shared.domain.port.inbound.TotalUseCase
 
 /** Managing the caller's liabilities; [total] is the sum of the active current balances. */
-interface LiabilityUseCase : CrudUseCase<Liability, LiabilityCommand, LiabilityCategory>
+interface LiabilityUseCase :
+    CrudUseCase<Liability, LiabilityCommand, LiabilityCategory>,
+    TotalUseCase

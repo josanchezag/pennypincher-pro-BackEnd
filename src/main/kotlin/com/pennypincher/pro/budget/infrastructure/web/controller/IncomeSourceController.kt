@@ -10,25 +10,29 @@ import com.pennypincher.pro.budget.infrastructure.web.dto.IncomeSourceTotalRespo
 import com.pennypincher.pro.budget.infrastructure.web.mapper.IncomeSourceWebMapper
 import com.pennypincher.pro.shared.infrastructure.web.ApiPaths
 import com.pennypincher.pro.shared.infrastructure.web.ResponseEnvelopeFactory
-import com.pennypincher.pro.shared.infrastructure.web.controller.AbstractCrudController
-import java.math.BigDecimal
+import com.pennypincher.pro.shared.infrastructure.web.controller.AggregateEndpoint
+import com.pennypincher.pro.shared.infrastructure.web.controller.CategorizedCrudController
+import com.pennypincher.pro.shared.infrastructure.web.controller.TotalEndpoint
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-/** `/income-sources`: the caller's income streams. The endpoints themselves come from [AbstractCrudController]. */
+/** `/income-sources`: the caller's income streams, plus `/total`. The endpoints come from the shared bases. */
 @RestController
 @RequestMapping(ApiPaths.INCOME_SOURCES)
 class IncomeSourceController(useCase: IncomeSourceUseCase, envelopes: ResponseEnvelopeFactory) :
-    AbstractCrudController<
+    CategorizedCrudController<
         IncomeSource,
         IncomeSourceCommand,
         IncomeCategory,
         IncomeSourceRequest,
         IncomeSourceResponse,
-        >(useCase, envelopes) {
+        >(useCase, envelopes),
+    TotalEndpoint<IncomeSourceTotalResponse> by AggregateEndpoint(
+        envelopes,
+        useCase::total,
+        ::IncomeSourceTotalResponse,
+    ) {
     override fun toCommand(request: IncomeSourceRequest) = IncomeSourceWebMapper.toCommand(request)
 
     override fun toResponse(item: IncomeSource) = IncomeSourceWebMapper.toResponse(item)
-
-    override fun toTotalResponse(total: BigDecimal) = IncomeSourceTotalResponse(total)
 }

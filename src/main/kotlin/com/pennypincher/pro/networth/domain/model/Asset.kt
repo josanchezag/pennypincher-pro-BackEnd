@@ -2,6 +2,7 @@ package com.pennypincher.pro.networth.domain.model
 
 import com.pennypincher.pro.networth.domain.model.enums.AssetCategory
 import com.pennypincher.pro.shared.domain.model.OwnedResource
+import com.pennypincher.pro.shared.domain.model.RecordName
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
@@ -18,7 +19,7 @@ data class Asset(
 ) : OwnedResource {
     companion object {
         /** Longest asset name the database accepts. */
-        const val MAX_NAME_LENGTH = 150
+        const val MAX_NAME_LENGTH = RecordName.MAX_LENGTH
 
         /** List order: category (declaration order), then name ignoring case. */
         val DISPLAY_ORDER: Comparator<Asset> =

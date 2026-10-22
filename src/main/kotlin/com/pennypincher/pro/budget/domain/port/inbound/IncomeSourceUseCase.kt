@@ -4,6 +4,9 @@ import com.pennypincher.pro.budget.domain.model.IncomeSource
 import com.pennypincher.pro.budget.domain.model.IncomeSourceCommand
 import com.pennypincher.pro.budget.domain.model.enums.IncomeCategory
 import com.pennypincher.pro.shared.domain.port.inbound.CrudUseCase
+import com.pennypincher.pro.shared.domain.port.inbound.TotalUseCase
 
 /** Managing the caller's income sources; [total] is the total monthly income of the active sources. */
-interface IncomeSourceUseCase : CrudUseCase<IncomeSource, IncomeSourceCommand, IncomeCategory>
+interface IncomeSourceUseCase :
+    CrudUseCase<IncomeSource, IncomeSourceCommand, IncomeCategory>,
+    TotalUseCase

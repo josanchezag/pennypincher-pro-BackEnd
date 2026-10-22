@@ -10,22 +10,22 @@ import com.pennypincher.pro.networth.infrastructure.web.dto.LiabilityTotalRespon
 import com.pennypincher.pro.networth.infrastructure.web.mapper.LiabilityWebMapper
 import com.pennypincher.pro.shared.infrastructure.web.ApiPaths
 import com.pennypincher.pro.shared.infrastructure.web.ResponseEnvelopeFactory
-import com.pennypincher.pro.shared.infrastructure.web.controller.AbstractCrudController
-import java.math.BigDecimal
+import com.pennypincher.pro.shared.infrastructure.web.controller.AggregateEndpoint
+import com.pennypincher.pro.shared.infrastructure.web.controller.CategorizedCrudController
+import com.pennypincher.pro.shared.infrastructure.web.controller.TotalEndpoint
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-/** `/liabilities`: the caller's debts. The endpoints themselves are defined by [AbstractCrudController]. */
+/** `/liabilities`: the caller's debts, plus `/total`. The endpoints themselves come from the shared bases. */
 @RestController
 @RequestMapping(ApiPaths.LIABILITIES)
 class LiabilityController(useCase: LiabilityUseCase, envelopes: ResponseEnvelopeFactory) :
-    AbstractCrudController<Liability, LiabilityCommand, LiabilityCategory, LiabilityRequest, LiabilityResponse>(
+    CategorizedCrudController<Liability, LiabilityCommand, LiabilityCategory, LiabilityRequest, LiabilityResponse>(
         useCase,
         envelopes,
-    ) {
+    ),
+    TotalEndpoint<LiabilityTotalResponse> by AggregateEndpoint(envelopes, useCase::total, ::LiabilityTotalResponse) {
     override fun toCommand(request: LiabilityRequest) = LiabilityWebMapper.toCommand(request)
 
     override fun toResponse(item: Liability) = LiabilityWebMapper.toResponse(item)
-
-    override fun toTotalResponse(total: BigDecimal) = LiabilityTotalResponse(total)
 }
