@@ -12,4 +12,5 @@ object ApiPaths {
     const val ASSETS = "$API_V1/assets"
     const val LIABILITIES = "$API_V1/liabilities"
     const val NET_WORTH = "$API_V1/net-worth"
+    const val INCOME_SOURCES = "$API_V1/income-sources"
 }

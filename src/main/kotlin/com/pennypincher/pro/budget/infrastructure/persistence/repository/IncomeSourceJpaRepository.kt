@@ -1,0 +1,6 @@
+package com.pennypincher.pro.budget.infrastructure.persistence.repository
+
+import com.pennypincher.pro.budget.infrastructure.persistence.entity.IncomeSourceEntity
+import com.pennypincher.pro.shared.infrastructure.persistence.repository.CategorizedAmountJpaRepository
+
+interface IncomeSourceJpaRepository : CategorizedAmountJpaRepository<IncomeSourceEntity>

@@ -1,4 +1,4 @@
-package com.pennypincher.pro.networth.infrastructure.web.controller
+package com.pennypincher.pro.shared.infrastructure.web.controller
 
 import com.pennypincher.pro.support.ApiIntegrationTest
 import java.util.UUID
@@ -9,8 +9,8 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 
-/** Authentication and input validation of the asset and liability endpoints, which share one implementation. */
-class BalanceSheetItemGuardIntegrationTest : ApiIntegrationTest() {
+/** Authentication and input validation of the per-user CRUD endpoints, which share one implementation. */
+class CrudEndpointGuardIntegrationTest : ApiIntegrationTest() {
     @ParameterizedTest
     @MethodSource("endpoints")
     fun should_return_unauthorized_when_token_is_missing(endpoint: Endpoint) {
@@ -97,6 +97,7 @@ class BalanceSheetItemGuardIntegrationTest : ApiIntegrationTest() {
         fun endpoints(): List<Endpoint> = listOf(
             Endpoint("/api/v1/assets", "value", "CASH"),
             Endpoint("/api/v1/liabilities", "currentBalance", "CREDIT_CARD"),
+            Endpoint("/api/v1/income-sources", "amount", "EMPLOYMENT"),
         )
     }
 }
