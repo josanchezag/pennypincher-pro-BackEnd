@@ -1,0 +1,53 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle with dependency cache
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Check code style
+        run: ./gradlew ktlintCheck
+
+      - name: Run tests and verify coverage
+        run: ./gradlew test jacocoTestCoverageVerification
+
+      - name: Build the application jar
+        run: ./gradlew bootJar
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results
+          path: |
+            build/test-results/test/
+            build/reports/tests/test/
+            build/reports/jacoco/test/
+          retention-days: 14
+          if-no-files-found: warn

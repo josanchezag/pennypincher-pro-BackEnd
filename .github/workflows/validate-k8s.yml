@@ -1,0 +1,50 @@
+name: Validate Kubernetes manifests
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "infra/kubernetes/**"
+      - ".github/workflows/validate-k8s.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "infra/kubernetes/**"
+      - ".github/workflows/validate-k8s.yml"
+
+permissions:
+  contents: read
+
+env:
+  KUBECONFORM_VERSION: v0.6.7
+  MANIFESTS_DIR: infra/kubernetes
+
+jobs:
+  validate:
+    name: Validate manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Install kubeconform
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP/bin" kubeconform
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Validate schemas strictly
+        run: kubeconform -strict -summary -ignore-filename-pattern README "$MANIFESTS_DIR"
+
+      - name: Start a throwaway kind cluster
+        uses: helm/kind-action@v1
+
+      - name: Client-side dry run
+        run: kubectl apply --dry-run=client -R -f "$MANIFESTS_DIR"
+
+      - name: Server-side dry run
+        run: |
+          kubectl apply -f "$MANIFESTS_DIR/00-namespace.yaml"
+          kubectl apply --dry-run=server -R -f "$MANIFESTS_DIR"
