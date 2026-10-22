@@ -1,10 +1,14 @@
 package com.pennypincher.pro.expenses.infrastructure.config
 
 import com.pennypincher.pro.expenses.application.usecase.CreditCardUseCaseImpl
+import com.pennypincher.pro.expenses.application.usecase.ExpenseUseCaseImpl
 import com.pennypincher.pro.expenses.application.usecase.LoanUseCaseImpl
+import com.pennypincher.pro.expenses.domain.model.enums.FixedExpenseCategory
 import com.pennypincher.pro.expenses.domain.port.inbound.CreditCardUseCase
+import com.pennypincher.pro.expenses.domain.port.inbound.ExpenseUseCase
 import com.pennypincher.pro.expenses.domain.port.inbound.LoanUseCase
 import com.pennypincher.pro.expenses.domain.port.outbound.CreditCardRepository
+import com.pennypincher.pro.expenses.domain.port.outbound.ExpenseRepository
 import com.pennypincher.pro.expenses.domain.port.outbound.LoanRepository
 import java.time.Clock
 import org.springframework.context.annotation.Bean
@@ -19,4 +23,10 @@ class ExpensesUseCaseConfig {
 
     @Bean
     fun loanUseCase(loanRepository: LoanRepository, clock: Clock): LoanUseCase = LoanUseCaseImpl(loanRepository, clock)
+
+    @Bean
+    fun fixedExpenseUseCase(
+        fixedExpenseRepository: ExpenseRepository<FixedExpenseCategory>,
+        clock: Clock,
+    ): ExpenseUseCase<FixedExpenseCategory> = ExpenseUseCaseImpl(fixedExpenseRepository, clock, "Fixed expense")
 }

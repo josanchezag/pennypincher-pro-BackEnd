@@ -163,6 +163,7 @@ class CrudEndpointGuardIntegrationTest : ApiIntegrationTest() {
             Endpoint("/api/v1/income-sources", TOTAL, listOf("amount"), "EMPLOYMENT"),
             Endpoint("/api/v1/credit-cards", SUMMARY, listOf("monthlyPayment", "totalBalance")),
             Endpoint("/api/v1/loans", SUMMARY, listOf("monthlyPayment", "totalBalance")),
+            Endpoint("/api/v1/fixed-expenses", SUMMARY, listOf("monthlyAmount"), "EDUCATION"),
         )
 
         @JvmStatic

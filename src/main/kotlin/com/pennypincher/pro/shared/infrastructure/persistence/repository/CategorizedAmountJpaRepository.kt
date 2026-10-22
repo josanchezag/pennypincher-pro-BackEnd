@@ -14,4 +14,17 @@ interface CategorizedAmountJpaRepository<E : CategorizedAmountEntity> : OwnedRec
 
     @Query("select coalesce(sum(e.amount), 0) from #{#entityName} e where e.userId = :userId and e.active = true")
     fun sumActiveAmount(@Param("userId") userId: UUID): BigDecimal
+
+    @Query(
+        "select e.category as category, sum(e.amount) as totalAmount, count(e) as count " +
+            "from #{#entityName} e where e.userId = :userId and e.active = true group by e.category",
+    )
+    fun sumActiveAmountByCategory(@Param("userId") userId: UUID): List<CategoryAmountRow>
+}
+
+/** One row of [CategorizedAmountJpaRepository.sumActiveAmountByCategory]: a category with active records. */
+interface CategoryAmountRow {
+    val category: String
+    val totalAmount: BigDecimal
+    val count: Long
 }
