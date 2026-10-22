@@ -187,6 +187,23 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/users/me
   caracteres (si no, `400 VALIDATION_FAILED`). `email` y `pictureUrl` los gestiona Google y se ignoran.
 - El `userId` siempre sale del access token, nunca del cuerpo. Si el usuario ya no existe: `404 NOT_FOUND`.
 
+### CORS
+
+Registrado solo para `/api/**`, igual que en la sección 10 de la especificación: orígenes explícitos de
+`CORS_ALLOWED_ORIGINS` (separados por comas; sin la variable se usan `http://localhost:3000` y
+`http://localhost:8080`; nunca `*`), métodos `GET, POST, PUT, PATCH, DELETE, OPTIONS`, headers
+`Authorization, Content-Type, X-Request-ID`, `allowCredentials = true` (necesario para la cookie) y
+`maxAge = 3600`. Se exponen `Location` y `X-Request-ID`. Un origen inválido detiene el arranque.
+
+```bash
+curl -i -X OPTIONS http://localhost:8080/api/v1/users/me \
+  -H 'Origin: http://localhost:3000' -H 'Access-Control-Request-Method: GET'
+```
+
+En producción el frontend (Vercel) y la API (Render) están en sitios distintos: la cookie necesitará
+`AUTH_COOKIE_SAME_SITE=None` (con `Secure`), y el header `Origin` obligatorio en refresh/logout la protege
+contra CSRF.
+
 ### Configurar el cliente OAuth de Google
 
 1. En [Google Cloud Console](https://console.cloud.google.com/apis/credentials) crear un

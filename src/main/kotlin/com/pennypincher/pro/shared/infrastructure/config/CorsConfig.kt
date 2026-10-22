@@ -6,6 +6,12 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
+/**
+ * CORS for the browser frontend, registered only for the paths under `/api/`: explicit origins
+ * (never `*`, because credentials are allowed so the `ppp_refresh` cookie can travel), the methods
+ * and headers the API uses, and a one-hour preflight cache. `Location` and `X-Request-ID` are
+ * exposed to scripts.
+ */
 @Configuration
 class CorsConfig {
     @Bean

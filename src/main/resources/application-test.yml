@@ -4,9 +4,6 @@ spring:
   flyway:
     clean-disabled: true
 
-cors:
-  allowed-origins: http://localhost:3000
-
 jwt:
   generate-missing-keys: true
   local-key-dir: build/test-keys
