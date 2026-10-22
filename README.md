@@ -187,6 +187,24 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/users/me
   caracteres (si no, `400 VALIDATION_FAILED`). `email` y `pictureUrl` los gestiona Google y se ignoran.
 - El `userId` siempre sale del access token, nunca del cuerpo. Si el usuario ya no existe: `404 NOT_FOUND`.
 
+### Patrimonio: activos
+
+Los montos son COP con dos decimales: en JSON van como número (`350000000.00`), se aceptan valores `>= 0`
+con hasta 16 dígitos enteros y 2 decimales, y el nombre se recorta y debe tener entre 1 y 150 caracteres.
+
+- `GET /api/v1/assets[?category=REAL_ESTATE]` → lista de `{ id, name, value, category, createdAt, updatedAt }`
+  activos del usuario, ordenada por categoría (en el orden del enum) y luego por nombre sin distinguir
+  mayúsculas. Categorías: `REAL_ESTATE`, `VEHICLE`, `BUSINESS`, `CASH`, `SAVINGS`, `EQUIPMENT`, `OTHER`.
+- `GET /api/v1/assets/total` → `{ totalAssets }`: suma de los activos activos.
+- `GET /api/v1/assets/{id}` → el activo (es la URL del header `Location` de la creación).
+- `POST /api/v1/assets` con `{ name, value, category }` → `201` con `Location` y el activo creado.
+- `PUT /api/v1/assets/{id}` con el mismo cuerpo → `200` con el activo actualizado.
+- `DELETE /api/v1/assets/{id}` → `204`; es un borrado lógico (`is_active = false`). Solo esa operación cambia
+  `is_active`: una actualización que llega después del borrado no reactiva el activo.
+- Un activo de otro usuario, inexistente o ya borrado responde `404 NOT_FOUND`. Un cuerpo inválido, una
+  categoría desconocida (también en `?category=`) o un id que no es UUID responden `400 VALIDATION_FAILED`
+  con el campo en `error.details`.
+
 ### CORS
 
 Registrado solo para `/api/**`, igual que en la sección 10 de la especificación: orígenes explícitos de

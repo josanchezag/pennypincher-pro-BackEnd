@@ -1,5 +1,7 @@
 package com.pennypincher.pro.shared.infrastructure.web.advice
 
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.pennypincher.pro.shared.domain.exception.BusinessException
 import com.pennypincher.pro.shared.domain.exception.ErrorCode
 import com.pennypincher.pro.shared.domain.exception.ValidationException
@@ -17,6 +19,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 
 /**
@@ -53,8 +56,18 @@ class GlobalExceptionHandler(private val envelopes: ResponseEnvelopeFactory) {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
-    fun handleUnreadableBody(exception: HttpMessageNotReadableException): ResponseEntity<ApiErrorResponse> =
-        respond(ErrorCode.VALIDATION_FAILED, "Request body is missing or malformed")
+    fun handleUnreadableBody(exception: HttpMessageNotReadableException): ResponseEntity<ApiErrorResponse> {
+        val field = (exception.cause as? MismatchedInputException)?.path?.let(::fieldPath).orEmpty()
+        val details = if (field.isEmpty()) emptyList() else listOf(ApiErrorDetail(field, INVALID_VALUE))
+        return respond(ErrorCode.VALIDATION_FAILED, "Request body is missing or malformed", details)
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    fun handleTypeMismatch(exception: MethodArgumentTypeMismatchException): ResponseEntity<ApiErrorResponse> = respond(
+        ErrorCode.VALIDATION_FAILED,
+        "Validation failed for 1 field(s)",
+        listOf(ApiErrorDetail(exception.name, INVALID_VALUE)),
+    )
 
     @ExceptionHandler(AuthenticationException::class)
     fun handleAuthentication(exception: AuthenticationException): ResponseEntity<ApiErrorResponse> =
@@ -96,7 +109,11 @@ class GlobalExceptionHandler(private val envelopes: ResponseEnvelopeFactory) {
         .status(ErrorStatusMapping.statusOf(code))
         .body(envelopes.error(code, message ?: code.name, details))
 
+    private fun fieldPath(path: List<JsonMappingException.Reference>): String =
+        path.joinToString(PATH_SEPARATOR) { it.fieldName ?: "[${it.index}]" }
+
     private companion object {
         const val INVALID_VALUE = "is invalid"
+        const val PATH_SEPARATOR = "."
     }
 }

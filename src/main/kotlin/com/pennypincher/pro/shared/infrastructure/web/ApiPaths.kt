@@ -9,4 +9,5 @@ object ApiPaths {
     const val AUTH_REFRESH = "$AUTH$REFRESH"
     const val AUTH_LOGOUT = "$AUTH$LOGOUT"
     const val USERS = "$API_V1/users"
+    const val ASSETS = "$API_V1/assets"
 }
