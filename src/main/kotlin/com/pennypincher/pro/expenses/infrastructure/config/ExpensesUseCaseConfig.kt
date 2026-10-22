@@ -3,14 +3,17 @@ package com.pennypincher.pro.expenses.infrastructure.config
 import com.pennypincher.pro.expenses.application.usecase.CreditCardUseCaseImpl
 import com.pennypincher.pro.expenses.application.usecase.ExpenseUseCaseImpl
 import com.pennypincher.pro.expenses.application.usecase.LoanUseCaseImpl
+import com.pennypincher.pro.expenses.application.usecase.SavingsAccountUseCaseImpl
 import com.pennypincher.pro.expenses.domain.model.enums.FixedExpenseCategory
 import com.pennypincher.pro.expenses.domain.model.enums.VariableExpenseCategory
 import com.pennypincher.pro.expenses.domain.port.inbound.CreditCardUseCase
 import com.pennypincher.pro.expenses.domain.port.inbound.ExpenseUseCase
 import com.pennypincher.pro.expenses.domain.port.inbound.LoanUseCase
+import com.pennypincher.pro.expenses.domain.port.inbound.SavingsAccountUseCase
 import com.pennypincher.pro.expenses.domain.port.outbound.CreditCardRepository
 import com.pennypincher.pro.expenses.domain.port.outbound.ExpenseRepository
 import com.pennypincher.pro.expenses.domain.port.outbound.LoanRepository
+import com.pennypincher.pro.expenses.domain.port.outbound.SavingsAccountRepository
 import java.time.Clock
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -37,4 +40,8 @@ class ExpensesUseCaseConfig {
         clock: Clock,
     ): ExpenseUseCase<VariableExpenseCategory> =
         ExpenseUseCaseImpl(variableExpenseRepository, clock, "Variable expense")
+
+    @Bean
+    fun savingsAccountUseCase(savingsAccountRepository: SavingsAccountRepository, clock: Clock): SavingsAccountUseCase =
+        SavingsAccountUseCaseImpl(savingsAccountRepository, clock)
 }

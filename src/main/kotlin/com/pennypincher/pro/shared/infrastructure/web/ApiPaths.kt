@@ -18,4 +18,5 @@ object ApiPaths {
     const val LOANS = "$API_V1/loans"
     const val FIXED_EXPENSES = "$API_V1/fixed-expenses"
     const val VARIABLE_EXPENSES = "$API_V1/variable-expenses"
+    const val SAVINGS_ACCOUNTS = "$API_V1/savings-accounts"
 }

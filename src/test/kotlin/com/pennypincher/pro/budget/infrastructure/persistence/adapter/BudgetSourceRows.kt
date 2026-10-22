@@ -4,8 +4,8 @@ import java.util.UUID
 import org.springframework.jdbc.core.JdbcTemplate
 
 /**
- * Inserts rows straight into the debt, expense and savings tables, which have no API yet, so that budget
- * tests can feed every component.
+ * Inserts rows straight into the debt, expense and savings tables, so that budget tests can feed every
+ * component without going through the expense APIs (`ExpensesBudgetIntegrationTest` covers that path).
  */
 class BudgetSourceRows(private val jdbc: JdbcTemplate) {
     fun creditCard(userId: UUID, monthlyPayment: String, active: Boolean = true) =

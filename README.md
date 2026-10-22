@@ -207,8 +207,9 @@ con hasta 16 dígitos enteros y 2 decimales, y el nombre se recorta y debe tener
 
 ### Patrimonio: pasivos
 
-`/api/v1/liabilities` funciona igual que `/api/v1/assets` (misma implementación, `AbstractCrudController` y
-`AbstractCrudUseCase`), pero el monto se llama `currentBalance` (saldo pendiente, `>= 0`):
+`/api/v1/liabilities` funciona igual que `/api/v1/assets` (misma implementación: `CategorizedCrudController`
+con `/total` opcional vía `TotalEndpoint`, y `AbstractTotalCrudUseCase`), pero el monto se llama
+`currentBalance` (saldo pendiente, `>= 0`):
 
 - `GET /api/v1/liabilities[?category=CREDIT_CARD]` → `{ id, name, currentBalance, category, createdAt, updatedAt }`.
   Categorías: `CREDIT_CARD`, `PERSONAL_LOAN`, `BANK_LOAN`, `FAMILY_DEBT`, `OTHER`.
@@ -231,6 +232,34 @@ con hasta 16 dígitos enteros y 2 decimales, y el nombre se recorta y debe tener
   `{ id, snapshotDate, totalAssets, totalLiabilities, netWorth, createdAt, updatedAt }` ordenada por
   `snapshotDate` ascendente. Los límites son inclusivos y opcionales; `from` se lleva al primer día de su
   mes. `from` posterior a `to`, o una fecha que no es ISO (`yyyy-MM-dd`), responde `400 VALIDATION_FAILED`.
+
+### Detalle de gastos y ahorro
+
+Cinco recursos con el mismo CRUD que los activos (`GET` lista, `GET /{id}`, `POST` → `201` con `Location`,
+`PUT`, `DELETE` → `204` con borrado lógico, `404` para registros de otro usuario o borrados) y un
+`GET .../summary` calculado en la base de datos con las filas activas. No tienen `/total`. Montos COP con dos
+decimales (`>= 0`, hasta 16 dígitos enteros); nombre recortado de 1 a 150 caracteres.
+
+| Recurso | Cuerpo | Orden | `summary` |
+|---|---|---|---|
+| `/api/v1/credit-cards` | `{ name, monthlyPayment, totalBalance }` | nombre | `{ totalMonthlyPayments, totalOutstandingBalance, count }` |
+| `/api/v1/loans` | `{ name, monthlyPayment, totalBalance, originalAmount? }` | nombre | igual que tarjetas |
+| `/api/v1/fixed-expenses[?category=]` | `{ name, monthlyAmount, category }` | categoría, nombre | `{ totalMonthlyAmount, count, byCategory: [{ category, totalMonthlyAmount, count }] }` |
+| `/api/v1/variable-expenses[?category=]` | `{ name, monthlyAmount, category }` | categoría, nombre | igual que gastos fijos |
+| `/api/v1/savings-accounts` | `{ name, monthlyContribution, currentBalance }` | nombre | `{ totalMonthlyContributions, totalCurrentBalance, count }` |
+
+- El nombre se ordena sin distinguir mayúsculas; la categoría sigue el orden del enum.
+- Gastos fijos: `FOOD, EDUCATION, TRANSPORT, UTILITIES, INSURANCE, HOUSING, HEALTH, CHARITY, COMMUNICATION,
+  TAXES, OTHER`. Gastos variables: `LEISURE, STREAMING, HOUSEHOLD_STAFF, DINING, CLOTHING, GIFTS, OTHER`.
+  Una categoría desconocida (en el cuerpo o en `?category=`) responde `400 VALIDATION_FAILED`.
+- `byCategory` solo lista categorías con gastos activos, en el orden del enum, e ignora `?category=`.
+- `originalAmount` del préstamo es opcional: la respuesta siempre lo incluye (`null` si no se registra) y un
+  `PUT` sin él lo borra. No se exige que sea mayor que el saldo.
+- El presupuesto mensual suma estas tablas (pagos de tarjetas y préstamos, gastos fijos separando `CHARITY`,
+  gastos variables y aportes de ahorro), pero solo cambia al crearlo, editarlo o con `POST .../recalculate`.
+- Implementación: tarjetas, préstamos y ahorro comparten `AbstractBalanceAccountUseCase`,
+  `BalanceAccountEntity` y `UncategorizedCrudController`; gastos fijos y variables usan el mismo
+  `Expense<C>`, `ExpenseUseCaseImpl` y `ExpenseController`. `/summary` se habilita con `SummaryEndpoint`.
 
 ### CORS
 

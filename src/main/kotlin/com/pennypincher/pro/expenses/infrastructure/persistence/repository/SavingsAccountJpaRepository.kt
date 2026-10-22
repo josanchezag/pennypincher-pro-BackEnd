@@ -1,0 +1,5 @@
+package com.pennypincher.pro.expenses.infrastructure.persistence.repository
+
+import com.pennypincher.pro.expenses.infrastructure.persistence.entity.SavingsAccountEntity
+
+interface SavingsAccountJpaRepository : BalanceAccountJpaRepository<SavingsAccountEntity>
