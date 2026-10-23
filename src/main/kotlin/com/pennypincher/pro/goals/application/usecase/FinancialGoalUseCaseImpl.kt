@@ -2,9 +2,12 @@ package com.pennypincher.pro.goals.application.usecase
 
 import com.pennypincher.pro.goals.domain.model.FinancialGoal
 import com.pennypincher.pro.goals.domain.model.FinancialGoalCommand
+import com.pennypincher.pro.goals.domain.model.GoalProjection
 import com.pennypincher.pro.goals.domain.model.StandardGoals
 import com.pennypincher.pro.goals.domain.port.inbound.FinancialGoalUseCase
 import com.pennypincher.pro.goals.domain.port.outbound.FinancialGoalRepository
+import com.pennypincher.pro.goals.domain.service.GoalProjectionService
+import com.pennypincher.pro.networth.domain.port.inbound.NetWorthUseCase
 import com.pennypincher.pro.shared.application.usecase.AbstractCrudUseCase
 import com.pennypincher.pro.shared.domain.model.Money
 import com.pennypincher.pro.shared.domain.model.RecordName
@@ -12,6 +15,7 @@ import com.pennypincher.pro.shared.domain.validation.FieldValidator
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -19,10 +23,15 @@ import java.util.UUID
  * the monthly investment non-negative (both COP amounts), the expected annual return a fraction in (0, 1]
  * with at most 4 decimals, and the optional target years between 1 and 100; an update without target years
  * clears them. Lists follow the level order, then the target amount and then the name ignoring case.
- * Deleting removes the goal for good (the repository decides how a record is deleted).
+ * Deleting removes the goal for good (the repository decides how a record is deleted). Projections use the
+ * net worth read live from [netWorthUseCase] and today's date from [clock].
  */
-class FinancialGoalUseCaseImpl(repository: FinancialGoalRepository, clock: Clock) :
-    AbstractCrudUseCase<FinancialGoal, FinancialGoalCommand, Nothing>(repository, clock),
+class FinancialGoalUseCaseImpl(
+    repository: FinancialGoalRepository,
+    private val netWorthUseCase: NetWorthUseCase,
+    private val projectionService: GoalProjectionService,
+    private val clock: Clock,
+) : AbstractCrudUseCase<FinancialGoal, FinancialGoalCommand, Nothing>(repository, clock),
     FinancialGoalUseCase {
     override val resourceName = "Financial goal"
 
@@ -61,6 +70,18 @@ class FinancialGoalUseCaseImpl(repository: FinancialGoalRepository, clock: Clock
         val usedLevels = list(userId, null).map(FinancialGoal::level).toSet()
         StandardGoals.ALL.filterNot { it.level in usedLevels }.forEach { create(userId, it) }
         return list(userId, null)
+    }
+
+    override fun getProjection(userId: UUID, goalId: UUID): GoalProjection =
+        project(userId, listOf(get(userId, goalId))).single()
+
+    override fun getAllProjections(userId: UUID): List<GoalProjection> = project(userId, list(userId, null))
+
+    private fun project(userId: UUID, goals: List<FinancialGoal>): List<GoalProjection> {
+        if (goals.isEmpty()) return emptyList()
+        val netWorth = netWorthUseCase.getCurrentNetWorth(userId).netWorth
+        val today = LocalDate.now(clock)
+        return goals.map { projectionService.project(it, netWorth, today) }
     }
 
     private fun FieldValidator.requireAnnualReturn(value: BigDecimal): FieldValidator = when {

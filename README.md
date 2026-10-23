@@ -280,6 +280,19 @@ responde `404` y no vuelve a crear la fila: la actualización es un único `UPDA
   Independencia Financiera 1.016.000.000 con 3.040.000, Libertad Financiera 2.066.000.000 con 7.000.000 y
   Libertad Absoluta 4.366.000.000 con 15.850.000; todas al 11 % anual y 16 años), solo para los niveles que
   aún no tienen meta. Es idempotente y responde `200` con la lista completa.
+- `GET .../{id}/projection` (`404` si es de otro usuario) y `GET .../all-projections` (todas, en el orden de la
+  lista; `[]` sin metas) devuelven `{ goalId, name, level, targetAmount, currentNetWorth, progressAmount,
+  progressPercentage, remainingAmount, monthlyInvestment, expectedAnnualReturn, targetYears, reachable,
+  projectedMonthsToGoal, projectedYearsToGoal, projectedAchievementDate, projectionDataPoints: [{ month, date,
+  projectedValue }] }`. El patrimonio neto se lee en vivo (activos − pasivos activos; puede ser negativo).
+- Cálculo (`GoalProjectionService`, Kotlin puro con `BigDecimal` en `DECIMAL128`; solo se redondea al final):
+  tasa mensual efectiva `r = (1 + anual)^(1/12) − 1` y `FV(n) = PV·(1+r)^n + PMT·((1+r)^n − 1)/r`, con el
+  aporte al final de cada mes.
+  La meta se alcanza en el primer mes `n` (0 a 600) con `FV(n) >= meta`; si no llega en 600 meses,
+  `reachable` es `false` y los tres campos `projected*` son `null`. El progreso es el patrimonio limitado a
+  `[0, meta]`, el porcentaje va de 0 a 100 con dos decimales (`HALF_UP`) y los años son `meses / 12`. Las fechas
+  son el día 1 del mes actual (UTC) más `n` meses. Los puntos van del mes 0 (el patrimonio actual) hasta el mes
+  en que se alcanza la meta, con un mínimo de 12 meses, o hasta el 600 si no se alcanza.
 - Implementación: `FinancialGoalUseCaseImpl` extiende `AbstractCrudUseCase` y el controlador
   `UncategorizedCrudController`. El borrado lo decide el puerto (`UserScopedCrudRepository.delete`): lógico en
   los adaptadores de `OwnedRecordRepositoryAdapter`, físico en `FinancialGoalRepositoryAdapter`. El puerto

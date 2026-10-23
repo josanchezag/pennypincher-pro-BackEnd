@@ -5,6 +5,9 @@ import com.pennypincher.pro.goals.domain.model.FinancialGoalCommand
 import com.pennypincher.pro.goals.domain.model.StandardGoals
 import com.pennypincher.pro.goals.domain.model.enums.GoalLevel
 import com.pennypincher.pro.goals.domain.port.outbound.FinancialGoalRepository
+import com.pennypincher.pro.goals.domain.service.GoalProjectionService
+import com.pennypincher.pro.networth.domain.model.NetWorthSummary
+import com.pennypincher.pro.networth.domain.port.inbound.NetWorthUseCase
 import com.pennypincher.pro.shared.domain.exception.ResourceNotFoundException
 import com.pennypincher.pro.shared.domain.exception.ValidationException
 import io.mockk.every
@@ -13,6 +16,7 @@ import io.mockk.verify
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -23,7 +27,13 @@ import org.junit.jupiter.api.assertThrows
 
 class FinancialGoalUseCaseImplTest {
     private val repository = mockk<FinancialGoalRepository>()
-    private val useCase = FinancialGoalUseCaseImpl(repository, Clock.fixed(NOW, ZoneOffset.UTC))
+    private val netWorthUseCase = mockk<NetWorthUseCase>()
+    private val useCase = FinancialGoalUseCaseImpl(
+        repository,
+        netWorthUseCase,
+        GoalProjectionService(),
+        Clock.fixed(NOW, ZoneOffset.UTC),
+    )
     private val userId = UUID.randomUUID()
 
     @Test
@@ -197,6 +207,54 @@ class FinancialGoalUseCaseImplTest {
             ),
             GoalLevel.entries.map { it.description },
         )
+    }
+
+    @Test
+    fun should_project_goal_against_live_net_worth_and_current_month_when_getting_projection() {
+        val goal = existingGoal()
+        every { repository.findActiveById(userId, goal.id) } returns goal
+        every { netWorthUseCase.getCurrentNetWorth(userId) } returns
+            NetWorthSummary(BigDecimal("500000000.00"), BigDecimal("76717227.00"))
+
+        val projection = useCase.getProjection(userId, goal.id)
+
+        assertEquals(goal, projection.goal)
+        assertEquals("423282773.00", projection.currentNetWorth.toPlainString())
+        assertEquals("69.96", projection.progressPercentage.toPlainString())
+        assertEquals(LocalDate.parse("2026-10-01"), projection.dataPoints.first().date)
+    }
+
+    @Test
+    fun should_report_not_found_without_reading_net_worth_when_projecting_a_missing_goal() {
+        val id = UUID.randomUUID()
+        every { repository.findActiveById(userId, id) } returns null
+
+        assertThrows<ResourceNotFoundException> { useCase.getProjection(userId, id) }
+        verify(exactly = 0) { netWorthUseCase.getCurrentNetWorth(any()) }
+    }
+
+    @Test
+    fun should_project_every_goal_in_list_order_reading_net_worth_once() {
+        val goals = listOf(
+            existingGoal("libre", GoalLevel.FINANCIAL_FREEDOM, "2066000000"),
+            existingGoal("segura", GoalLevel.FINANCIAL_SECURITY, "605000000"),
+        )
+        every { repository.findAllActive(userId, null) } returns goals
+        every { netWorthUseCase.getCurrentNetWorth(userId) } returns
+            NetWorthSummary(BigDecimal("1.00"), BigDecimal.ZERO)
+
+        val projections = useCase.getAllProjections(userId)
+
+        assertEquals(listOf("segura", "libre"), projections.map { it.goal.name })
+        verify(exactly = 1) { netWorthUseCase.getCurrentNetWorth(userId) }
+    }
+
+    @Test
+    fun should_return_no_projections_without_reading_net_worth_when_user_has_no_goals() {
+        every { repository.findAllActive(userId, null) } returns emptyList()
+
+        assertEquals(emptyList<Any>(), useCase.getAllProjections(userId))
+        verify(exactly = 0) { netWorthUseCase.getCurrentNetWorth(any()) }
     }
 
     private fun command(
