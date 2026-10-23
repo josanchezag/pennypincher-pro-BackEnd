@@ -22,9 +22,16 @@ class FieldValidator {
     }
 
     /** The amount must be zero or positive and fit the money format. */
-    fun requireNonNegativeAmount(field: String, value: BigDecimal): FieldValidator = apply {
+    fun requireNonNegativeAmount(field: String, value: BigDecimal): FieldValidator =
+        requireAmount(field, value, value.signum() >= 0, NEGATIVE_AMOUNT)
+
+    /** The amount must be greater than zero and fit the money format. */
+    fun requirePositiveAmount(field: String, value: BigDecimal): FieldValidator =
+        requireAmount(field, value, value.signum() > 0, NOT_POSITIVE_AMOUNT)
+
+    private fun requireAmount(field: String, value: BigDecimal, inRange: Boolean, rangeMessage: String) = apply {
         when {
-            value.signum() < 0 -> violations += FieldViolation(field, NEGATIVE_AMOUNT)
+            !inRange -> violations += FieldViolation(field, rangeMessage)
             !Money.fits(value) -> violations += FieldViolation(field, AMOUNT_FORMAT)
         }
     }
@@ -36,6 +43,7 @@ class FieldValidator {
 
     private companion object {
         const val NEGATIVE_AMOUNT = "must be greater than or equal to 0"
+        const val NOT_POSITIVE_AMOUNT = "must be greater than 0"
         const val AMOUNT_FORMAT =
             "must have at most ${Money.MAX_INTEGER_DIGITS} integer digits and ${Money.SCALE} decimal places"
     }

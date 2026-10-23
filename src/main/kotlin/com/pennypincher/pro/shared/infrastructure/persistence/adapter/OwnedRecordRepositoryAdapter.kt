@@ -25,8 +25,15 @@ abstract class OwnedRecordRepositoryAdapter<T, E : OwnedRecordEntity, C>(
         jpaRepository.findByIdAndUserIdAndActiveTrue(id, userId)?.let(::toDomain)
 
     @Transactional
-    override fun save(item: T): T = toDomain(jpaRepository.save(toEntity(item)))
+    override fun insert(item: T): T = store(item)
 
+    /** Never null: rows are only soft-deleted, and `is_active` is not updatable, so a deleted row stays inactive. */
     @Transactional
-    override fun deactivate(userId: UUID, id: UUID): Boolean = jpaRepository.deactivate(id, userId) > 0
+    override fun update(item: T): T = store(item)
+
+    /** Soft delete: the row stays, marked inactive. */
+    @Transactional
+    override fun delete(userId: UUID, id: UUID): Boolean = jpaRepository.deactivate(id, userId) > 0
+
+    private fun store(item: T): T = toDomain(jpaRepository.save(toEntity(item)))
 }

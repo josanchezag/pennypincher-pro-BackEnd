@@ -59,7 +59,7 @@ class AssetUseCaseImplTest {
     @Test
     fun should_save_trimmed_asset_with_scaled_value_when_creating() {
         val saved = slot<Asset>()
-        every { repository.save(capture(saved)) } answers { firstArg() }
+        every { repository.insert(capture(saved)) } answers { firstArg() }
 
         val created = useCase.create(userId, AssetCommand("  Apto Madera ", BigDecimal("350000000"), REAL_ESTATE))
 
@@ -87,13 +87,14 @@ class AssetUseCaseImplTest {
             assertEquals(fields, exception.violations.map { it.field })
             assertThrows<ValidationException> { useCase.update(userId, UUID.randomUUID(), command) }
         }
-        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { repository.insert(any()) }
+        verify(exactly = 0) { repository.update(any()) }
         verify(exactly = 0) { repository.findActiveById(any(), any()) }
     }
 
     @Test
     fun should_accept_zero_value_and_name_of_maximum_length_when_creating() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         assertDoesNotThrow {
             useCase.create(userId, AssetCommand("x".repeat(Asset.MAX_NAME_LENGTH), BigDecimal.ZERO, REAL_ESTATE))
@@ -104,7 +105,7 @@ class AssetUseCaseImplTest {
     fun should_keep_identity_and_creation_time_when_updating() {
         val current = asset("Carro", AssetCategory.VEHICLE)
         every { repository.findActiveById(userId, current.id) } returns current
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.update(any()) } answers { firstArg() }
 
         val updated = useCase.update(
             userId,
@@ -119,7 +120,7 @@ class AssetUseCaseImplTest {
         assertEquals(AssetCategory.OTHER, updated.category)
         assertEquals(NOW, updated.updatedAt)
         assertNotEquals(current.updatedAt, updated.updatedAt)
-        verify(exactly = 1) { repository.save(updated) }
+        verify(exactly = 1) { repository.update(updated) }
     }
 
     @Test
@@ -132,7 +133,7 @@ class AssetUseCaseImplTest {
         }
 
         assertEquals("Asset not found", exception.message)
-        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { repository.update(any()) }
     }
 
     @Test
@@ -152,19 +153,19 @@ class AssetUseCaseImplTest {
     }
 
     @Test
-    fun should_deactivate_asset_when_deleting() {
+    fun should_soft_delete_asset_when_deleting() {
         val id = UUID.randomUUID()
-        every { repository.deactivate(userId, id) } returns true
+        every { repository.delete(userId, id) } returns true
 
         useCase.delete(userId, id)
 
-        verify(exactly = 1) { repository.deactivate(userId, id) }
+        verify(exactly = 1) { repository.delete(userId, id) }
     }
 
     @Test
     fun should_throw_not_found_when_deleting_asset_that_is_missing_or_of_another_user() {
         val id = UUID.randomUUID()
-        every { repository.deactivate(userId, id) } returns false
+        every { repository.delete(userId, id) } returns false
 
         assertThrows<ResourceNotFoundException> { useCase.delete(userId, id) }
     }

@@ -30,6 +30,9 @@ spring:
     deserialization:
       # 2026.5 for an integer field is rejected (400), not silently truncated.
       accept-float-as-int: false
+    mapper:
+      # "5" for a number field is rejected (400), not silently converted.
+      allow-coercion-of-scalars: false
 
 server:
   port: ${PORT:${SERVER_PORT:8080}}

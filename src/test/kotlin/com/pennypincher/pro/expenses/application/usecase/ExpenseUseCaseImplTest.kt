@@ -60,7 +60,7 @@ class ExpenseUseCaseImplTest {
 
     @Test
     fun should_save_trimmed_expense_with_two_decimal_amount_when_creating() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         val created = useCase.create(userId, ExpenseCommand(" Donación Aldeas ", BigDecimal("50000"), CHARITY))
 
@@ -86,7 +86,8 @@ class ExpenseUseCaseImplTest {
             assertEquals(fields, exception.violations.map { it.field })
             assertThrows<ValidationException> { useCase.update(userId, UUID.randomUUID(), command) }
         }
-        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { repository.insert(any()) }
+        verify(exactly = 0) { repository.update(any()) }
         verify(exactly = 0) { repository.findActiveById(any(), any()) }
     }
 
@@ -94,7 +95,7 @@ class ExpenseUseCaseImplTest {
     fun should_replace_every_field_and_keep_identity_when_updating() {
         val current = expense("Poliza", FixedExpenseCategory.OTHER)
         every { repository.findActiveById(userId, current.id) } returns current
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.update(any()) } answers { firstArg() }
 
         val updated = useCase.update(
             userId,
@@ -108,7 +109,7 @@ class ExpenseUseCaseImplTest {
         assertEquals("1382421.00", updated.monthlyAmount.toPlainString())
         assertEquals(FixedExpenseCategory.INSURANCE, updated.category)
         assertEquals(NOW, updated.updatedAt)
-        verify(exactly = 1) { repository.save(updated) }
+        verify(exactly = 1) { repository.update(updated) }
     }
 
     @Test

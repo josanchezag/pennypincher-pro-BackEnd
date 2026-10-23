@@ -9,7 +9,7 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * Template Method for the per-user CRUD records. The flow (validation, ownership check, soft delete,
+ * Template Method for the per-user CRUD records. The flow (validation, ownership check, deletion,
  * sorting) is fixed here; subclasses supply the hooks that differ per record type. A record of another
  * user is reported exactly like a missing one.
  */
@@ -40,15 +40,16 @@ abstract class AbstractCrudUseCase<T : OwnedResource, Cmd, C>(
 
     final override fun create(userId: UUID, command: Cmd): T {
         validate(command)
-        return repository.save(build(userId, command, Instant.now(clock)))
+        return repository.insert(build(userId, command, Instant.now(clock)))
     }
 
     final override fun update(userId: UUID, id: UUID, command: Cmd): T {
         validate(command)
-        return repository.save(applyChanges(get(userId, id), command, Instant.now(clock)))
+        val changed = applyChanges(get(userId, id), command, Instant.now(clock))
+        return repository.update(changed) ?: throw ResourceNotFoundException(resourceName)
     }
 
     final override fun delete(userId: UUID, id: UUID) {
-        if (!repository.deactivate(userId, id)) throw ResourceNotFoundException(resourceName)
+        if (!repository.delete(userId, id)) throw ResourceNotFoundException(resourceName)
     }
 }

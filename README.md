@@ -261,6 +261,32 @@ decimales (`>= 0`, hasta 16 dígitos enteros); nombre recortado de 1 a 150 carac
   `BalanceAccountEntity` y `UncategorizedCrudController`; gastos fijos y variables usan el mismo
   `Expense<C>`, `ExpenseUseCaseImpl` y `ExpenseController`. `/summary` se habilita con `SummaryEndpoint`.
 
+### Metas financieras
+
+`/api/v1/financial-goals` tiene el mismo CRUD que los demás recursos (`GET` lista, `GET /{id}`, `POST` → `201`
+con `Location`, `PUT`, `404` para metas de otro usuario), pero `DELETE` → `204` es un **borrado físico**: la
+fila desaparece (las metas son hitos intencionales, no historial). Un `PUT` que llega después del borrado
+responde `404` y no vuelve a crear la fila: la actualización es un único `UPDATE` filtrado por id y usuario.
+
+- Cuerpo: `{ name, level, targetAmount, monthlyInvestment, expectedAnnualReturn, targetYears? }`.
+  `targetAmount > 0` y `monthlyInvestment >= 0` (COP, dos decimales); `expectedAnnualReturn` es una fracción
+  `0 < v <= 1` con hasta 4 decimales (`0.11` = 11 %); `targetYears` es opcional, entero de 1 a 100, y un `PUT`
+  sin él lo borra. La respuesta agrega `levelDescription` y siempre incluye `targetYears` (`null` si no hay).
+- Niveles, en este orden fijo: `FINANCIAL_SECURITY`, `FINANCIAL_INDEPENDENCE`, `FINANCIAL_FREEDOM`,
+  `ABSOLUTE_FREEDOM`. Son una clasificación: varias metas pueden compartir nivel. `GET .../levels` devuelve
+  `[{ level, description }]`; las descripciones son constantes del backend, no están en la base.
+- La lista se ordena por nivel, luego por `targetAmount` ascendente y luego por nombre sin distinguir mayúsculas.
+- `POST .../defaults` crea las cuatro metas del Excel (Seguridad Financiera 605.000.000 con 1.470.000/mes,
+  Independencia Financiera 1.016.000.000 con 3.040.000, Libertad Financiera 2.066.000.000 con 7.000.000 y
+  Libertad Absoluta 4.366.000.000 con 15.850.000; todas al 11 % anual y 16 años), solo para los niveles que
+  aún no tienen meta. Es idempotente y responde `200` con la lista completa.
+- Implementación: `FinancialGoalUseCaseImpl` extiende `AbstractCrudUseCase` y el controlador
+  `UncategorizedCrudController`. El borrado lo decide el puerto (`UserScopedCrudRepository.delete`): lógico en
+  los adaptadores de `OwnedRecordRepositoryAdapter`, físico en `FinancialGoalRepositoryAdapter`. El puerto
+  separa `insert` y `update`; `update` devuelve `null` si la fila ya no existe y el caso de uso responde `404`.
+- En todos los recursos, un número enviado como texto (`"5"`) o fuera del rango del tipo
+  (`"targetYears": 99999999999`) responde `400 VALIDATION_FAILED` con el campo en `error.details`.
+
 ### CORS
 
 Registrado solo para `/api/**`, igual que en la sección 10 de la especificación: orígenes explícitos de

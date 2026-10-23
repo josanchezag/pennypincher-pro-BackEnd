@@ -47,7 +47,7 @@ class CreditCardUseCaseImplTest {
 
     @Test
     fun should_save_trimmed_card_with_two_decimal_amounts_when_creating() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         val created = useCase.create(
             userId,
@@ -79,7 +79,8 @@ class CreditCardUseCaseImplTest {
             assertEquals(fields, exception.violations.map { it.field })
             assertThrows<ValidationException> { useCase.update(userId, UUID.randomUUID(), command) }
         }
-        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { repository.insert(any()) }
+        verify(exactly = 0) { repository.update(any()) }
         verify(exactly = 0) { repository.findActiveById(any(), any()) }
     }
 
@@ -87,7 +88,7 @@ class CreditCardUseCaseImplTest {
     fun should_replace_every_field_and_keep_identity_when_updating() {
         val current = card("Addi")
         every { repository.findActiveById(userId, current.id) } returns current
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.update(any()) } answers { firstArg() }
 
         val updated = useCase.update(
             userId,
@@ -101,14 +102,14 @@ class CreditCardUseCaseImplTest {
         assertEquals("10.00", updated.monthlyPayment.toPlainString())
         assertEquals("5.50", updated.totalBalance.toPlainString())
         assertEquals(NOW, updated.updatedAt)
-        verify(exactly = 1) { repository.save(updated) }
+        verify(exactly = 1) { repository.update(updated) }
     }
 
     @Test
     fun should_throw_not_found_with_resource_name_when_card_is_missing_or_of_another_user() {
         val id = UUID.randomUUID()
         every { repository.findActiveById(userId, id) } returns null
-        every { repository.deactivate(userId, id) } returns false
+        every { repository.delete(userId, id) } returns false
 
         val exception = assertThrows<ResourceNotFoundException> { useCase.get(userId, id) }
 

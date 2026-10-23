@@ -1,7 +1,8 @@
 package com.pennypincher.pro.shared.infrastructure.web.advice
 
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.exc.InputCoercionException
 import com.fasterxml.jackson.databind.JsonMappingException
-import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.pennypincher.pro.shared.domain.exception.BusinessException
 import com.pennypincher.pro.shared.domain.exception.ErrorCode
 import com.pennypincher.pro.shared.domain.exception.ValidationException
@@ -57,7 +58,7 @@ class GlobalExceptionHandler(private val envelopes: ResponseEnvelopeFactory) {
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleUnreadableBody(exception: HttpMessageNotReadableException): ResponseEntity<ApiErrorResponse> {
-        val field = (exception.cause as? MismatchedInputException)?.path?.let(::fieldPath).orEmpty()
+        val field = fieldOf(exception.cause)
         val details = if (field.isEmpty()) emptyList() else listOf(ApiErrorDetail(field, INVALID_VALUE))
         return respond(ErrorCode.VALIDATION_FAILED, "Request body is missing or malformed", details)
     }
@@ -108,6 +109,13 @@ class GlobalExceptionHandler(private val envelopes: ResponseEnvelopeFactory) {
     ): ResponseEntity<ApiErrorResponse> = ResponseEntity
         .status(ErrorStatusMapping.statusOf(code))
         .body(envelopes.error(code, message ?: code.name, details))
+
+    /** The JSON field a body error points at, or empty when the body is malformed as a whole. */
+    private fun fieldOf(cause: Throwable?): String = when (cause) {
+        is JsonMappingException -> fieldPath(cause.path)
+        is InputCoercionException -> (cause.processor as? JsonParser)?.currentName().orEmpty()
+        else -> ""
+    }
 
     private fun fieldPath(path: List<JsonMappingException.Reference>): String =
         path.joinToString(PATH_SEPARATOR) { it.fieldName ?: "[${it.index}]" }

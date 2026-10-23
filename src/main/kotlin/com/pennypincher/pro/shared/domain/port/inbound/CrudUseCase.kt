@@ -17,6 +17,6 @@ interface CrudUseCase<T, Cmd, C> {
 
     fun update(userId: UUID, id: UUID, command: Cmd): T
 
-    /** Soft-deletes the record. */
+    /** Deletes the record: a soft delete, except for the kinds of record that are removed for good. */
     fun delete(userId: UUID, id: UUID)
 }

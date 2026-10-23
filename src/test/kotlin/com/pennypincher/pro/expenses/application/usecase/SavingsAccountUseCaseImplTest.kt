@@ -24,7 +24,7 @@ class SavingsAccountUseCaseImplTest {
 
     @Test
     fun should_save_trimmed_account_with_two_decimal_amounts_when_creating() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         val created = useCase.create(
             userId,
@@ -44,7 +44,7 @@ class SavingsAccountUseCaseImplTest {
         }
 
         assertEquals(listOf("monthlyContribution", "currentBalance"), exception.violations.map { it.field })
-        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { repository.insert(any()) }
     }
 
     @Test
@@ -52,7 +52,7 @@ class SavingsAccountUseCaseImplTest {
         val current =
             SavingsAccount(UUID.randomUUID(), userId, "Colchon", BigDecimal.ZERO, BigDecimal.ONE, EARLIER, EARLIER)
         every { repository.findActiveById(userId, current.id) } returns current
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.update(any()) } answers { firstArg() }
 
         val updated = useCase.update(
             userId,

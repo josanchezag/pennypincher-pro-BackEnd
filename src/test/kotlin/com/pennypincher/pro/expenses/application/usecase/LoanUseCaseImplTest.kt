@@ -25,7 +25,7 @@ class LoanUseCaseImplTest {
 
     @Test
     fun should_save_loan_with_rounded_original_amount_below_balance_when_creating() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         val created = useCase.create(userId, command(originalAmount = BigDecimal("50000000.5")))
 
@@ -38,7 +38,7 @@ class LoanUseCaseImplTest {
 
     @Test
     fun should_leave_original_amount_untracked_when_creating_without_it() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         assertNull(useCase.create(userId, command()).originalAmount)
     }
@@ -47,7 +47,7 @@ class LoanUseCaseImplTest {
     fun should_clear_original_amount_when_updating_without_it() {
         val current = existingLoan()
         every { repository.findActiveById(userId, current.id) } returns current
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.update(any()) } answers { firstArg() }
 
         val updated = useCase.update(userId, current.id, command(name = " Davivienda 7141 "))
 
@@ -55,7 +55,7 @@ class LoanUseCaseImplTest {
         assertEquals("Davivienda 7141", updated.name)
         assertNull(updated.originalAmount)
         assertEquals(NOW, updated.updatedAt)
-        verify(exactly = 1) { repository.save(updated) }
+        verify(exactly = 1) { repository.update(updated) }
     }
 
     @Test
@@ -73,7 +73,7 @@ class LoanUseCaseImplTest {
             listOf("name", "monthlyPayment", "totalBalance", "originalAmount"),
             exception.violations.map { it.field },
         )
-        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { repository.insert(any()) }
     }
 
     @Test

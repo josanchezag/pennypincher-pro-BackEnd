@@ -47,7 +47,7 @@ class LiabilityUseCaseImplTest {
 
     @Test
     fun should_save_trimmed_liability_with_scaled_balance_when_creating() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         val created = useCase.create(userId, LiabilityCommand(" Nu Bank ", BigDecimal("2500000"), CREDIT_CARD))
 
@@ -71,14 +71,14 @@ class LiabilityUseCaseImplTest {
             useCase.create(userId, LiabilityCommand(" ", BigDecimal.ZERO, CREDIT_CARD))
         }
         assertEquals(listOf("name"), blankName.violations.map { it.field })
-        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { repository.insert(any()) }
     }
 
     @Test
     fun should_apply_changes_and_keep_creation_time_when_updating() {
         val current = liability("Visa", CREDIT_CARD)
         every { repository.findActiveById(userId, current.id) } returns current
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.update(any()) } answers { firstArg() }
 
         val command = LiabilityCommand("Préstamo Davivienda", BigDecimal("9000000.1"), LiabilityCategory.BANK_LOAN)
         val updated = useCase.update(userId, current.id, command)
@@ -95,7 +95,7 @@ class LiabilityUseCaseImplTest {
     fun should_throw_not_found_when_liability_is_missing_or_of_another_user() {
         val id = UUID.randomUUID()
         every { repository.findActiveById(userId, id) } returns null
-        every { repository.deactivate(userId, id) } returns false
+        every { repository.delete(userId, id) } returns false
 
         val exception = assertThrows<ResourceNotFoundException> {
             useCase.update(userId, id, LiabilityCommand("Visa", BigDecimal.ONE, CREDIT_CARD))

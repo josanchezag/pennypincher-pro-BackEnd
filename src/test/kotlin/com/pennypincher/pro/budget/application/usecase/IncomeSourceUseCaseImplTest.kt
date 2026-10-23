@@ -47,7 +47,7 @@ class IncomeSourceUseCaseImplTest {
 
     @Test
     fun should_save_trimmed_source_with_default_currency_when_creating_without_currency() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         val created = useCase.create(userId, IncomeSourceCommand(" AvenueCode ", EMPLOYMENT, BigDecimal("15878607.3")))
 
@@ -62,7 +62,7 @@ class IncomeSourceUseCaseImplTest {
 
     @Test
     fun should_keep_given_currency_when_creating() {
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.insert(any()) } answers { firstArg() }
 
         val created = useCase.create(userId, IncomeSourceCommand("Remoti", EMPLOYMENT, BigDecimal.ONE, "USD"))
 
@@ -87,7 +87,8 @@ class IncomeSourceUseCaseImplTest {
             assertEquals(fields, exception.violations.map { it.field })
             assertThrows<ValidationException> { useCase.update(userId, UUID.randomUUID(), command) }
         }
-        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { repository.insert(any()) }
+        verify(exactly = 0) { repository.update(any()) }
         verify(exactly = 0) { repository.findActiveById(any(), any()) }
     }
 
@@ -95,7 +96,7 @@ class IncomeSourceUseCaseImplTest {
     fun should_replace_every_field_and_reset_currency_to_default_when_updating_without_currency() {
         val current = source("Airbnb", IncomeCategory.RENTAL).copy(currency = "USD")
         every { repository.findActiveById(userId, current.id) } returns current
-        every { repository.save(any()) } answers { firstArg() }
+        every { repository.update(any()) } answers { firstArg() }
 
         val updated = useCase.update(
             userId,
@@ -109,14 +110,14 @@ class IncomeSourceUseCaseImplTest {
         assertEquals("10.00", updated.amount.toPlainString())
         assertEquals(IncomeSource.DEFAULT_CURRENCY, updated.currency)
         assertEquals(NOW, updated.updatedAt)
-        verify(exactly = 1) { repository.save(updated) }
+        verify(exactly = 1) { repository.update(updated) }
     }
 
     @Test
     fun should_throw_not_found_with_resource_name_when_source_is_missing_or_of_another_user() {
         val id = UUID.randomUUID()
         every { repository.findActiveById(userId, id) } returns null
-        every { repository.deactivate(userId, id) } returns false
+        every { repository.delete(userId, id) } returns false
 
         val exception = assertThrows<ResourceNotFoundException> { useCase.get(userId, id) }
 

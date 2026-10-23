@@ -59,6 +59,28 @@ class FieldValidatorTest {
         assertEquals(listOf(FieldViolation("date", "is wrong")), exception.violations)
     }
 
+    @Test
+    fun should_reject_zero_negative_or_unstorable_amount_when_amount_must_be_positive() {
+        assertDoesNotThrow { FieldValidator().requirePositiveAmount("target", BigDecimal("0.01")).validate() }
+
+        val exception = assertThrows<ValidationException> {
+            FieldValidator()
+                .requirePositiveAmount("zero", BigDecimal.ZERO)
+                .requirePositiveAmount("negative", BigDecimal("-1"))
+                .requirePositiveAmount("cents", BigDecimal("1.001"))
+                .validate()
+        }
+
+        assertEquals(
+            listOf(
+                FieldViolation("zero", "must be greater than 0"),
+                FieldViolation("negative", "must be greater than 0"),
+                FieldViolation("cents", "must have at most 16 integer digits and 2 decimal places"),
+            ),
+            exception.violations,
+        )
+    }
+
     private companion object {
         const val MAX = 5
     }
